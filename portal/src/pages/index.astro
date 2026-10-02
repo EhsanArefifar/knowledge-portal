@@ -1,0 +1,395 @@
+---
+/**
+ * index.astro — Homepage
+ *
+ * Requirements: 4.1, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6
+ *
+ * - Hero section: site title, tagline, exactly two CTA links (Req 5.1)
+ * - Course cards grid: one CourseCard per discovered course (Req 5.2)
+ * - Quick Access inline list: three links from quickAccess.ts (Req 5.3)
+ * - Next Courses list: five entries from nextCourses.ts (Req 5.4)
+ * - Tools and Resources section: links to /resources, surfaces ccstatusline (Req 5.5)
+ * - No duration, difficulty, ratings, or completion badges (Req 5.6)
+ */
+
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CourseCard from '../components/CourseCard.astro';
+import { quickAccessLinks } from '../data/quickAccess';
+import { nextCourses } from '../data/nextCourses';
+import { resources } from '../data/resources';
+import { toSlug, folderToTitle, extractTitle, countNotes } from '../lib/naming';
+
+// ─── Content discovery ──────────────────────────────────────────────────────
+
+const allNotes = await getCollection('notes');
+
+// Group notes by the top-level folder (first segment of the entry ID)
+const courseFolderSet = new Set<string>();
+for (const entry of allNotes) {
+  const folder = entry.id.split('/')[0];
+  if (folder) courseFolderSet.add(folder);
+}
+const courseFolders = Array.from(courseFolderSet).sort();
+
+// Load _course.json metadata for each discovered course folder.
+// We import them statically so Vite can bundle them at build time.
+// The paths are relative to the repo root (one level above portal/).
+const courseMetaMap: Record<string, { provider: string; sourceUrl?: string }> = {};
+
+// Static imports for known course folders (new ones require adding an entry here)
+// This approach avoids dynamic require() which can break in SSG mode.
+try {
+  const claudeAcademyMeta = await import('../../Claude-academy/_course.json');
+  courseMetaMap['Claude-academy'] = claudeAcademyMeta.default ?? claudeAcademyMeta;
+} catch { /* folder not present */ }
+
+try {
+  const netNinjaMeta = await import('../../NetNinja-masterclass/_course.json');
+  courseMetaMap['NetNinja-masterclass'] = netNinjaMeta.default ?? netNinjaMeta;
+} catch { /* folder not present */ }
+
+// Build course models
+interface CourseModel {
+  slug: string;
+  folderName: string;
+  displayName: string;
+  provider: string;
+  sourceUrl?: string;
+  noteCount: number;
+}
+
+const courses: CourseModel[] = courseFolders.map((folderName) => {
+  const meta = courseMetaMap[folderName];
+  return {
+    slug: toSlug(folderName),
+    folderName,
+    displayName: folderToTitle(folderName),
+    provider: meta?.provider ?? folderToTitle(folderName),
+    sourceUrl: meta?.sourceUrl,
+    noteCount: countNotes(allNotes, folderName),
+  };
+});
+
+// Pick the ccstatusline resource for the Tools section
+const ccstatusline = resources.find((r) => r.name === 'ccstatusline') ?? resources[0];
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<BaseLayout
+  title="Home"
+  description="Personal AI Learning Portal — browse notes from Claude and AI courses."
+>
+  <!-- ===================================================================
+       HERO SECTION  (Req 5.1)
+       Exactly two CTA links.
+       =================================================================== -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="container hero-inner">
+      <h1 class="hero-title" id="hero-title">Personal AI Learning Portal</h1>
+      <p class="hero-tagline">
+        A curated collection of notes from Claude and AI engineering courses — browse,
+        search, and revisit concepts at any time.
+      </p>
+      <!-- Exactly two call-to-action links (Req 5.1) -->
+      <div class="hero-cta">
+        <a href={`${base}/courses`} class="btn btn-primary">Browse Courses</a>
+        <a href={`${base}/quick-access`} class="btn btn-secondary">Quick Access</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       COURSE CARDS GRID  (Req 5.2)
+       One CourseCard per discovered course; no invented metadata (Req 5.6).
+       =================================================================== -->
+  <section class="section-courses" aria-labelledby="courses-heading">
+    <div class="container">
+      <h2 class="section-heading" id="courses-heading">Courses</h2>
+      {courses.length > 0 ? (
+        <div class="cards-grid">
+          {courses.map((course) => (
+            <CourseCard
+              displayName={course.displayName}
+              provider={course.provider}
+              noteCount={course.noteCount}
+              sourceUrl={course.sourceUrl}
+              slug={course.slug}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="empty-state text-muted">No courses discovered yet.</p>
+      )}
+      <p class="section-link-row">
+        <a href={`${base}/courses`} class="section-link">View all courses →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       QUICK ACCESS  (Req 5.3)
+       Inline list of three Quick Access links. No progress / external badges.
+       =================================================================== -->
+  <section class="section-quick-access" aria-labelledby="quick-access-heading">
+    <div class="container">
+      <h2 class="section-heading" id="quick-access-heading">Quick Access</h2>
+      <ul class="inline-link-list" role="list">
+        {quickAccessLinks.map((link) => (
+          <li>
+            <a
+              href={link.url}
+              class="btn btn-secondary"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${link.label} (opens in new tab)`}
+            >
+              {link.label}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="section-link-row">
+        <a href={`${base}/quick-access`} class="section-link">See Quick Access page →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       NEXT COURSES  (Req 5.4)
+       Five planned course titles; no invented metadata (Req 11.2).
+       =================================================================== -->
+  <section class="section-next-courses" aria-labelledby="next-courses-heading">
+    <div class="container">
+      <h2 class="section-heading" id="next-courses-heading">Next Up</h2>
+      <ol class="next-courses-list">
+        {nextCourses.map((title) => (
+          <li class="next-courses-item">{title}</li>
+        ))}
+      </ol>
+      <p class="section-link-row">
+        <a href={`${base}/next-courses`} class="section-link">See full next courses list →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       TOOLS AND RESOURCES  (Req 5.5)
+       Links to /resources and surfaces the ccstatusline entry.
+       =================================================================== -->
+  <section class="section-resources" aria-labelledby="resources-heading">
+    <div class="container">
+      <h2 class="section-heading" id="resources-heading">Tools &amp; Resources</h2>
+      {ccstatusline && (
+        <div class="resource-highlight card">
+          <p class="resource-highlight__name">
+            <a
+              href={ccstatusline.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${ccstatusline.name} — ${ccstatusline.description} (opens in new tab)`}
+            >
+              {ccstatusline.name}
+            </a>
+          </p>
+          <p class="resource-highlight__desc text-muted">{ccstatusline.description}</p>
+        </div>
+      )}
+      <p class="section-link-row">
+        <a href={`${base}/resources`} class="section-link">Browse all resources →</a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* =====================================================================
+     HERO
+     ===================================================================== */
+  .hero {
+    background: linear-gradient(
+      135deg,
+      var(--color-surface) 0%,
+      var(--color-bg) 100%
+    );
+    border-bottom: 1px solid var(--color-border);
+    padding: 3rem 0 2.5rem;
+  }
+
+  .hero-inner {
+    max-width: 48rem;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-text);
+    margin: 0 0 0.75rem;
+  }
+
+  .hero-tagline {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--color-text-muted);
+    max-width: 42ch;
+    margin: 0 auto 1.75rem;
+  }
+
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  /* =====================================================================
+     GENERIC SECTION STRUCTURE
+     ===================================================================== */
+  .section-courses,
+  .section-quick-access,
+  .section-next-courses,
+  .section-resources {
+    padding: 2.5rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .section-heading {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 1.25rem;
+  }
+
+  .section-link-row {
+    margin: 1.25rem 0 0;
+    font-size: 0.875rem;
+  }
+
+  .section-link {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .section-link:hover,
+  .section-link:focus-visible {
+    text-decoration: underline;
+  }
+
+  /* =====================================================================
+     COURSE CARDS GRID
+     ===================================================================== */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .empty-state {
+    font-style: italic;
+  }
+
+  /* =====================================================================
+     QUICK ACCESS — inline list
+     ===================================================================== */
+  .inline-link-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .inline-link-list li {
+    display: flex;
+  }
+
+  .inline-link-list .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+  }
+
+  /* =====================================================================
+     NEXT COURSES — ordered list
+     ===================================================================== */
+  .next-courses-list {
+    list-style: decimal;
+    padding-left: 1.5rem;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .next-courses-item {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--color-text);
+  }
+
+  /* =====================================================================
+     RESOURCE HIGHLIGHT (ccstatusline card)
+     ===================================================================== */
+  .resource-highlight {
+    padding: 1rem 1.25rem;
+    max-width: 38rem;
+  }
+
+  .resource-highlight__name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+  }
+
+  .resource-highlight__name a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .resource-highlight__name a:hover,
+  .resource-highlight__name a:focus-visible {
+    text-decoration: underline;
+  }
+
+  .resource-highlight__desc {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* =====================================================================
+     RESPONSIVE
+     ===================================================================== */
+  @media (max-width: 639px) {
+    .hero {
+      padding: 2rem 0 1.75rem;
+    }
+
+    .cards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

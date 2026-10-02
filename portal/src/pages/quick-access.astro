@@ -1,0 +1,145 @@
+---
+/**
+ * quick-access.astro — Quick Access page
+ *
+ * Requirements: 4.5, 10.1, 10.2
+ *
+ * - Renders exactly three Quick Access links as a styled list
+ * - No progress indicators, completion status, or external badges (Req 10.2)
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { quickAccessLinks } from '../data/quickAccess';
+---
+
+<BaseLayout
+  title="Quick Access"
+  description="One-click access to the AI learning platforms used most."
+>
+  <div class="container page-content">
+    <header class="page-header">
+      <h1 class="page-title">Quick Access</h1>
+      <p class="page-subtitle text-muted">
+        Fast links to the external learning platforms used most frequently.
+      </p>
+    </header>
+
+    <!--
+      Styled list of three Quick Access links (Req 10.1).
+      No progress, completion status, or external badges (Req 10.2).
+    -->
+    <ul class="quick-access-list" role="list" aria-label="Quick access links">
+      {quickAccessLinks.map((link) => (
+        <li class="quick-access-item">
+          <a
+            href={link.url}
+            class="quick-access-link card"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${link.label} (opens in new tab)`}
+          >
+            <span class="quick-access-label">{link.label}</span>
+            <svg
+              class="quick-access-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-content {
+    padding-block: 2rem;
+  }
+
+  .page-header {
+    margin-bottom: 1.75rem;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 0.25rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  /* =====================================================================
+     QUICK ACCESS LIST
+     Styled as a vertical list of card-like links.
+     Req 10.2: simple styled list, no progress/status/badges
+     ===================================================================== */
+  .quick-access-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 36rem;
+  }
+
+  .quick-access-item {
+    display: flex;
+  }
+
+  .quick-access-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.9rem 1.25rem;
+    text-decoration: none;
+    color: var(--color-text);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    transition:
+      border-color var(--transition-base),
+      background-color var(--transition-base);
+  }
+
+  .quick-access-link:hover,
+  .quick-access-link:focus-visible {
+    border-color: var(--color-accent);
+    background-color: var(--color-surface);
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .quick-access-label {
+    flex: 1;
+  }
+
+  .quick-access-icon {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .quick-access-link {
+      transition: none;
+    }
+  }
+</style>

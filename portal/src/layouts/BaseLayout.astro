@@ -1,0 +1,292 @@
+---
+/**
+ * BaseLayout.astro — Global HTML shell for every page
+ *
+ * Requirements: 3.4, 13.1, 13.2, 15.1, 15.2, 16.1
+ *
+ * - Semantic HTML structure: <html>, <head>, <header>, <main>, <footer>
+ * - Synchronous theme-init <script> in <head> to prevent FOUC (Req 13.1, 13.2)
+ * - Skip-to-content link as first focusable element (Req 15.2)
+ * - ThemeToggle and SearchDialog integrated in the site header
+ * - Accepts `title` (required) and `description` (optional) props
+ * - global.css imported for base styles and design tokens
+ */
+
+import ThemeToggle from '../components/ThemeToggle.astro';
+import SearchDialog from '../components/SearchDialog.astro';
+import '../styles/tokens.css';
+import '../styles/global.css';
+
+interface Props {
+  /** Page title — used in <title> and as the visible <h1> complement. */
+  title: string;
+  /** Optional meta description for SEO and social cards. */
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+
+// Base path is configured in astro.config.mjs; import.meta.env.BASE_URL
+// resolves to "/claude-code-knowledge-base/" in production.
+const base = import.meta.env.BASE_URL;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title} — Personal AI Learning Portal</title>
+
+    {description && <meta name="description" content={description} />}
+
+    <!--
+      Synchronous theme-initialization script (Req 13.1, 13.2, 16.1)
+      Placed in <head> BEFORE any CSS paint to avoid Flash of Unstyled Content.
+      Reads localStorage; falls back to OS prefers-color-scheme.
+      Handles SecurityError thrown in private-browsing mode.
+    -->
+    <script is:inline>
+      (function () {
+        var validThemes = ['light', 'dark'];
+        var stored;
+        try {
+          stored = localStorage.getItem('theme');
+        } catch (e) {
+          // SecurityError in private browsing — stored remains undefined
+        }
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = validThemes.includes(stored) ? stored : (prefersDark ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+
+    <!-- Favicon placeholder — replace with real asset when available -->
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+  </head>
+
+  <body>
+    <!--
+      Skip-to-content link (Req 15.2)
+      Must be the FIRST focusable element in <body> — appears on keyboard focus,
+      visually hidden otherwise (see .skip-to-content in global.css).
+    -->
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
+
+    <!--
+      Site header (Req 15.1: semantic <header>)
+      Contains site title link, SearchDialog trigger, and ThemeToggle.
+    -->
+    <header class="site-header" role="banner">
+      <div class="container">
+        <nav class="site-nav" aria-label="Site navigation">
+          <a href={base || '/'} class="site-logo" aria-label="Personal AI Learning Portal — Home">
+            <span aria-hidden="true">🧠</span>
+            <span class="site-logo-text">AI Learning Portal</span>
+          </a>
+
+          <div class="site-nav-links">
+            <a href={`${base}/courses`} class="nav-link">Courses</a>
+            <a href={`${base}/quick-access`} class="nav-link">Quick Access</a>
+            <a href={`${base}/resources`} class="nav-link">Resources</a>
+          </div>
+        </nav>
+
+        <div class="site-header-actions">
+          <!--
+            Search trigger (Req 9.2): Ctrl+K / Cmd+K opens the dialog.
+            The <button> here provides an additional clickable entry point.
+          -->
+          <button
+            class="btn search-trigger"
+            type="button"
+            aria-label="Open search (Ctrl+K)"
+            aria-keyshortcuts="Control+K Meta+K"
+            onclick="document.getElementById('search-dialog')?.showModal()"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span class="search-trigger-label">Search</span>
+            <kbd class="search-trigger-kbd" aria-hidden="true">⌘K</kbd>
+          </button>
+
+          <ThemeToggle />
+        </div>
+      </div>
+    </header>
+
+    <!-- SearchDialog — keyboard shortcut and button above open this (Req 9.1–9.6) -->
+    <SearchDialog />
+
+    <!--
+      Main content area (Req 15.1: semantic <main>)
+      id="main-content" is the skip-to-content anchor target.
+    -->
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <!--
+      Site footer (Req 15.1: semantic <footer>)
+    -->
+    <footer class="site-footer" role="contentinfo">
+      <div class="container">
+        <p class="text-muted">
+          Personal AI Learning Portal — built with
+          <a href="https://astro.build" target="_blank" rel="noopener noreferrer">Astro</a>.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  /* -------------------------------------------------------------------------
+     Site Header
+     Req 15.1: semantic landmark, Req 14.4: usable at 320px+
+     ------------------------------------------------------------------------- */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .site-header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 0.75rem;
+  }
+
+  /* Site logo / wordmark */
+  .site-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--color-text);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .site-logo:hover,
+  .site-logo:focus-visible {
+    color: var(--color-accent);
+  }
+
+  /* Primary nav links */
+  .site-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .site-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: color var(--transition-base);
+    white-space: nowrap;
+  }
+
+  .nav-link:hover,
+  .nav-link:focus-visible {
+    color: var(--color-accent);
+  }
+
+  /* Header action buttons (search + theme toggle) */
+  .site-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  /* Search trigger button */
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .search-trigger-label {
+    font-size: 0.875rem;
+  }
+
+  .search-trigger-kbd {
+    display: inline-block;
+    padding: 0.1em 0.4em;
+    font-family: var(--font-code);
+    font-size: 0.75em;
+    color: var(--color-text-muted);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    line-height: 1.5;
+  }
+
+  /* -------------------------------------------------------------------------
+     Site footer
+     Req 15.1: semantic <footer> landmark
+     ------------------------------------------------------------------------- */
+  .site-footer {
+    margin-top: auto;
+    border-top: 1px solid var(--color-border);
+    padding-block: 1.25rem;
+    font-size: 0.875rem;
+  }
+
+  /* -------------------------------------------------------------------------
+     Responsive adjustments
+     Req 14.4: fully usable from 320px upward
+     ------------------------------------------------------------------------- */
+  @media (max-width: 639px) {
+    .site-nav-links {
+      display: none; /* Hidden on mobile — accessible via DrawerNav in future task */
+    }
+
+    .search-trigger-label,
+    .search-trigger-kbd {
+      display: none; /* Icon-only on mobile to save space */
+    }
+
+    .site-logo-text {
+      /* Truncate long wordmark on very small screens */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 12ch;
+    }
+  }
+</style>

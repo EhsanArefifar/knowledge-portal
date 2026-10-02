@@ -1,0 +1,545 @@
+/* =============================================================================
+   global.css — Base Styles, Layout Utilities, and Responsive Grid
+   Personal AI Learning Portal
+   Requirements: 13.4, 14.1–14.4, 15.5, 16.3, 19.1–19.5
+
+   Usage: import '../styles/global.css' in BaseLayout.astro
+   ============================================================================= */
+
+@import './tokens.css';
+
+/* =============================================================================
+   1. Box-sizing reset
+   ============================================================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* =============================================================================
+   2. Base document styles
+   Req 16.3, 19.1: System font stacks, no external @import
+   ============================================================================= */
+html {
+  /* Smooth scrolling — disabled under prefers-reduced-motion (section 9) */
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  /* Req 19.5: line-height ≥ 1.6 */
+  line-height: 1.7;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  /* Prevent horizontal overflow on narrow viewports (Req 14.4) */
+  overflow-x: hidden;
+  min-width: 320px;
+}
+
+/* =============================================================================
+   3. Typography
+   ============================================================================= */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-text);
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.125rem; }
+h5, h6 { font-size: 1rem; }
+
+p {
+  /* Req 19.5: comfortable paragraph line length */
+  margin-block: 0.75em;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--transition-base);
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--color-accent-hover);
+}
+
+/* Req 19.1: monospace / code font */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-code);
+  font-size: 0.875em;
+}
+
+pre {
+  overflow-x: auto;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  /* Req 19.3: subtle box shadow */
+  box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+code:not(pre code) {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1rem;
+  color: var(--color-text-muted);
+  margin-block: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin-block: 1.5rem;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-card);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+th {
+  background-color: var(--color-surface);
+  font-weight: 600;
+}
+
+/* =============================================================================
+   4. Focus ring — WCAG 2.1 AA non-text contrast (Req 15.3)
+   3px outline offset from element edge, using the accent color at full opacity
+   ============================================================================= */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Remove default focus ring for mouse users while keeping it for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* =============================================================================
+   5. Skip-to-content link (Req 15.2, 15.4)
+   Visually hidden until focused — appears at the top of the page for keyboard users
+   ============================================================================= */
+.skip-to-content {
+  position: absolute;
+  top: -9999px;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
+  border-radius: var(--radius-btn);
+  text-decoration: none;
+  transition: top var(--transition-base);
+}
+
+.skip-to-content:focus-visible {
+  top: 1rem;
+  outline: 2px solid var(--color-bg);
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   6. Card and button shared aesthetics
+   Req 19.3, 19.4: subtle borders, medium border-radius
+   ============================================================================= */
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 3px var(--color-shadow);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px var(--color-shadow);
+  border-color: var(--color-accent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transition-base), border-color var(--transition-base),
+    color var(--transition-base);
+}
+
+.btn:hover,
+.btn:focus-visible {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+/* =============================================================================
+   7. Note content column
+   Req 19.5: line-height ≥ 1.6, max-width ≤ 72ch
+   ============================================================================= */
+.note-content {
+  max-width: 72ch;
+  width: 100%;
+  line-height: 1.75;
+  /* Ensure prose stays readable even inside flex/grid parents */
+  min-width: 0;
+}
+
+.note-content h1,
+.note-content h2,
+.note-content h3,
+.note-content h4,
+.note-content h5,
+.note-content h6 {
+  margin-top: 1.75em;
+  margin-bottom: 0.5em;
+}
+
+.note-content ul,
+.note-content ol {
+  padding-left: 1.5rem;
+  margin-block: 0.75em;
+}
+
+.note-content li + li {
+  margin-top: 0.25em;
+}
+
+.note-content li > ul,
+.note-content li > ol {
+  margin-top: 0.25em;
+}
+
+/* =============================================================================
+   8. Three-column note reader layout
+   Req 7.1, 14.1–14.3
+   Column structure: [left sidebar] [content] [right sidebar (TOC)]
+   ============================================================================= */
+
+/* --- Desktop: three columns (≥ 1024px) --- */
+.layout-three-col {
+  display: grid;
+  grid-template-columns: 240px 1fr 220px;
+  grid-template-rows: 1fr;
+  gap: 0;
+  min-height: 100vh;
+  align-items: start;
+}
+
+.layout-three-col .sidebar-left {
+  grid-column: 1;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid var(--color-border);
+  padding: 1.5rem 1rem;
+}
+
+.layout-three-col .layout-content {
+  grid-column: 2;
+  padding: 2rem 2.5rem;
+  min-width: 0;
+}
+
+.layout-three-col .sidebar-right {
+  grid-column: 3;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  border-left: 1px solid var(--color-border);
+  padding: 1.5rem 1rem;
+}
+
+/* --- Tablet: two columns (640px – 1023px) --- */
+.layout-two-col {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 0;
+  min-height: 100vh;
+  align-items: start;
+}
+
+.layout-two-col .sidebar-left {
+  display: none;  /* off-canvas — accessed via toggle button */
+}
+
+.layout-two-col .layout-content {
+  grid-column: 1;
+  padding: 1.5rem;
+  min-width: 0;
+}
+
+.layout-two-col .sidebar-right {
+  grid-column: 2;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  border-left: 1px solid var(--color-border);
+  padding: 1.25rem 0.75rem;
+}
+
+/* --- Mobile: single column (< 640px) --- */
+.layout-single-col {
+  display: block;
+  min-height: 100vh;
+}
+
+.layout-single-col .sidebar-left,
+.layout-single-col .sidebar-right {
+  /* Both sidebars hidden by default — left via DrawerNav, right hidden on mobile */
+  display: none;
+}
+
+.layout-single-col .layout-content {
+  padding: 1rem;
+  min-width: 0;
+}
+
+/* =============================================================================
+   9. Responsive media queries
+   Req 14.1–14.4: breakpoints at 1024px and 640px
+   ============================================================================= */
+
+/* ≥ 1024px — desktop: three-column layout active */
+@media (min-width: 1024px) {
+  .layout-reader {
+    display: grid;
+    grid-template-columns: 240px 1fr 220px;
+    align-items: start;
+    min-height: 100vh;
+  }
+
+  .layout-reader .sidebar-left {
+    display: block;
+    grid-column: 1;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--color-border);
+    padding: 1.5rem 1rem;
+  }
+
+  .layout-reader .layout-content {
+    grid-column: 2;
+    padding: 2rem 2.5rem;
+    min-width: 0;
+  }
+
+  .layout-reader .sidebar-right {
+    display: block;
+    grid-column: 3;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    border-left: 1px solid var(--color-border);
+    padding: 1.5rem 1rem;
+  }
+}
+
+/* 640px – 1023px — tablet: two-column layout */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .layout-reader {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    align-items: start;
+    min-height: 100vh;
+  }
+
+  .layout-reader .sidebar-left {
+    display: none; /* off-canvas; shown via DrawerNav toggle */
+  }
+
+  .layout-reader .layout-content {
+    grid-column: 1;
+    padding: 1.5rem;
+    min-width: 0;
+  }
+
+  .layout-reader .sidebar-right {
+    display: block;
+    grid-column: 2;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    border-left: 1px solid var(--color-border);
+    padding: 1.25rem 0.75rem;
+  }
+}
+
+/* < 640px — mobile: single-column layout with drawer navigation */
+@media (max-width: 639px) {
+  .layout-reader {
+    display: block;
+    min-height: 100vh;
+  }
+
+  .layout-reader .sidebar-left,
+  .layout-reader .sidebar-right {
+    display: none; /* left = DrawerNav, right = hidden on mobile */
+  }
+
+  .layout-reader .layout-content {
+    padding: 1rem;
+    min-width: 0;
+  }
+
+  /* Course cards grid: single column on mobile */
+  .courses-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* =============================================================================
+   10. Reduced-motion — Req 13.4, 15.6
+   Disables ALL CSS transitions and animations when the user has requested
+   reduced motion at the OS level.
+   ============================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =============================================================================
+   11. Course cards grid (homepage / courses index)
+   ============================================================================= */
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+/* =============================================================================
+   12. Utility classes
+   ============================================================================= */
+
+/* Visually hidden — accessible to screen readers, invisible on screen */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Muted / secondary text */
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+/* Accent text */
+.text-accent {
+  color: var(--color-accent);
+}
+
+/* Container — horizontally centered, capped width */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* Flex row with gap */
+.flex-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* =============================================================================
+   13. Scrollbar styling (subtle, non-obtrusive)
+   ============================================================================= */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-muted);
+}

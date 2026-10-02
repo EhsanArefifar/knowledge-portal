@@ -1,0 +1,403 @@
+---
+/**
+ * SearchDialog.astro — Native <dialog> search overlay powered by Pagefind UI
+ *
+ * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 15.4
+ *
+ * Behaviour:
+ *  - Open:  Ctrl+K / Cmd+K keydown, or clicking the trigger <button>
+ *  - Close: Escape key (native dialog + focus return), backdrop click, close button
+ *  - Pagefind UI is lazy-loaded only on the FIRST open (Req 9.1, 16.4)
+ *  - On load failure a "Search unavailable" message is shown (Req 9.3)
+ *  - Focus trap: Tab/Shift+Tab cycle only through focusable elements inside the
+ *    dialog while it is open (Req 15.2, 15.4)
+ *  - Focus returns to the triggering element when the dialog closes (Req 9.6)
+ */
+---
+
+<!--
+  Native <dialog> element.
+  aria-label gives the dialog an accessible name (Req 15.4).
+  aria-modal="true" tells assistive technologies that content behind the dialog
+  is inert while the dialog is open.
+-->
+<dialog
+  id="search-dialog"
+  class="search-dialog"
+  aria-label="Search notes"
+  aria-modal="true"
+>
+  <div class="search-dialog-inner">
+    <!-- Dialog header: title + close button -->
+    <div class="search-dialog-header">
+      <span class="search-dialog-title" id="search-dialog-title">Search</span>
+      <button
+        id="search-dialog-close"
+        class="btn search-dialog-close-btn"
+        type="button"
+        aria-label="Close search dialog"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <line x1="18" y1="6"  x2="6"  y2="18" />
+          <line x1="6"  y1="6"  x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Pagefind UI mounts into this div (Req 9.3) -->
+    <div id="pagefind-search" class="search-dialog-body"></div>
+
+    <!--
+      Fallback message shown when Pagefind WASM fails to load.
+      Hidden by default; revealed via JS on error (Req 9.3).
+    -->
+    <p id="search-unavailable" class="search-unavailable" hidden aria-live="polite">
+      Search is currently unavailable. Please try again after refreshing the page.
+    </p>
+  </div>
+</dialog>
+
+<style>
+  /* -------------------------------------------------------------------------
+     Dialog backdrop + overlay
+     Native <dialog>::backdrop covers the page behind the dialog.
+     Req 9.2: centered overlay; Req 15.4: ARIA labels on custom component
+     ------------------------------------------------------------------------- */
+  .search-dialog {
+    /* Reset browser defaults */
+    border: none;
+    padding: 0;
+    background: transparent;
+    /* Centering: the <dialog> itself is a fixed-position block covering the
+       viewport when open (with ::backdrop). We set its dimensions and let
+       margin: auto center it. */
+    position: fixed;
+    inset: 0;
+    width: min(600px, calc(100vw - 2rem));
+    max-height: calc(100dvh - 4rem);
+    margin: auto;
+    /* Visual card appearance */
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 8px 32px var(--color-shadow);
+    /* Make inner content scrollable if results are long */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Style the native backdrop (shown when dialog.showModal() is called) */
+  .search-dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  /* -------------------------------------------------------------------------
+     Dialog inner layout
+     ------------------------------------------------------------------------- */
+  .search-dialog-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: calc(100dvh - 4rem);
+  }
+
+  /* Header bar */
+  .search-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .search-dialog-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .search-dialog-close-btn {
+    /* Square icon button */
+    padding: 0.35rem 0.45rem;
+    flex-shrink: 0;
+  }
+
+  /* Scrollable body where Pagefind UI mounts */
+  .search-dialog-body {
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* -------------------------------------------------------------------------
+     Pagefind UI style overrides
+     These target the classes Pagefind UI injects into #pagefind-search.
+     We remap their CSS variables to our own design tokens so the widget
+     looks consistent with the portal's theme.
+     ------------------------------------------------------------------------- */
+  #pagefind-search {
+    /* Pagefind uses its own CSS custom properties — override them here */
+    --pagefind-ui-scale: 0.9;
+    --pagefind-ui-primary: var(--color-accent);
+    --pagefind-ui-text: var(--color-text);
+    --pagefind-ui-background: var(--color-surface);
+    --pagefind-ui-border: var(--color-border);
+    --pagefind-ui-tag: var(--color-surface);
+    --pagefind-ui-border-width: 1px;
+    --pagefind-ui-border-radius: var(--radius-btn);
+    --pagefind-ui-font: var(--font-ui);
+  }
+
+  /* -------------------------------------------------------------------------
+     "Search unavailable" error message
+     Req 9.3: shown when WASM fails
+     ------------------------------------------------------------------------- */
+  .search-unavailable {
+    margin: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background-color: var(--color-bg);
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+
+  /* -------------------------------------------------------------------------
+     Reduced motion
+     Req 13.4, 15.6: disable non-essential animations
+     global.css already covers this globally, but we add a safety net for the
+     backdrop blur which is not a transition/animation.
+     ------------------------------------------------------------------------- */
+  @media (prefers-reduced-motion: reduce) {
+    .search-dialog::backdrop {
+      backdrop-filter: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * SearchDialog client-side controller
+   *
+   * Responsibilities:
+   *  1. Open dialog on Ctrl+K / Cmd+K keydown
+   *  2. Open dialog when the trigger button in the header is clicked
+   *  3. Close dialog on Escape (native) + return focus to trigger
+   *  4. Close dialog on backdrop click
+   *  5. Lazy-load Pagefind UI on FIRST open only
+   *  6. Show "Search unavailable" message on Pagefind load failure
+   *  7. Focus trap: cycle Tab/Shift+Tab through focusable elements inside dialog
+   *  8. Return focus to the element that triggered the dialog when it closes
+   */
+  (function () {
+    'use strict';
+
+    const dialog   = document.getElementById('search-dialog')   as HTMLDialogElement | null;
+    const closeBtn = document.getElementById('search-dialog-close') as HTMLButtonElement | null;
+    const searchEl = document.getElementById('pagefind-search') as HTMLElement | null;
+    const errorEl  = document.getElementById('search-unavailable') as HTMLElement | null;
+
+    if (!dialog) return;
+
+    // ------------------------------------------------------------------
+    // State
+    // ------------------------------------------------------------------
+    let pagefindLoaded  = false;
+    let pagefindLoading = false;
+    /** The element that last triggered the dialog — focus returns here on close */
+    let triggerElement: Element | null = null;
+
+    // ------------------------------------------------------------------
+    // Focus-trap helpers
+    // ------------------------------------------------------------------
+
+    /** Selector for elements that are natively focusable */
+    const FOCUSABLE_SELECTOR = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+
+    function getFocusableElements(): HTMLElement[] {
+      return Array.from(
+        dialog!.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      ).filter((el) => !el.closest('[hidden]'));
+    }
+
+    /** Trap Tab / Shift+Tab focus within the dialog */
+    function handleFocusTrap(e: KeyboardEvent): void {
+      if (e.key !== 'Tab') return;
+
+      const focusable = getFocusableElements();
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last  = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        // Shift+Tab: if focus is on first element, wrap to last
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        // Tab: if focus is on last element, wrap to first
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Pagefind lazy-load
+    // ------------------------------------------------------------------
+
+    async function loadPagefind(): Promise<void> {
+      if (pagefindLoaded || pagefindLoading) return;
+      pagefindLoading = true;
+
+      try {
+        // BASE_URL is injected by Astro at build time; ends with "/" in production
+        const base = import.meta.env.BASE_URL;
+        // Normalise: ensure exactly one trailing slash then append path
+        const baseUrl = base.endsWith('/') ? base : `${base}/`;
+        const scriptSrc = `${baseUrl}_pagefind/pagefind-ui.js`;
+
+        // Dynamically import the Pagefind UI script
+        await import(/* @vite-ignore */ scriptSrc);
+
+        // PagefindUI attaches itself to `window`; initialise it
+        const PagefindUI = (window as unknown as Record<string, unknown>)['PagefindUI'] as
+          | (new (opts: { element: string; showImages: boolean; showEmptyFilters: boolean }) => void)
+          | undefined;
+
+        if (typeof PagefindUI !== 'function') {
+          throw new Error('PagefindUI constructor not found on window');
+        }
+
+        new PagefindUI({
+          element: '#pagefind-search',
+          showImages: false,
+          showEmptyFilters: false,
+        });
+
+        pagefindLoaded  = true;
+        pagefindLoading = false;
+      } catch (err) {
+        pagefindLoading = false;
+        console.error('[SearchDialog] Failed to load Pagefind UI:', err);
+        // Show the fallback "Search unavailable" message
+        if (errorEl) {
+          errorEl.hidden = false;
+        }
+        // Clear the loading placeholder text in the mount container
+        if (searchEl) {
+          searchEl.innerHTML = '';
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Open / close
+    // ------------------------------------------------------------------
+
+    function openDialog(trigger?: Element | null): void {
+      if (!dialog) return;
+      triggerElement = trigger ?? document.activeElement;
+      dialog.showModal();
+      // Attach focus trap while dialog is open
+      dialog.addEventListener('keydown', handleFocusTrap);
+      // Kick off Pagefind lazy-load (no-op after first call)
+      loadPagefind();
+      // Move focus to the close button so keyboard users can navigate from there
+      closeBtn?.focus();
+    }
+
+    function closeDialog(): void {
+      if (!dialog) return;
+      dialog.close();
+      dialog.removeEventListener('keydown', handleFocusTrap);
+      // Return focus to the element that opened the dialog (Req 9.6)
+      if (triggerElement && 'focus' in triggerElement) {
+        (triggerElement as HTMLElement).focus();
+      }
+      triggerElement = null;
+    }
+
+    // ------------------------------------------------------------------
+    // Event listeners
+    // ------------------------------------------------------------------
+
+    // 1. Ctrl+K / Cmd+K (Req 9.2)
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        if (dialog.open) {
+          closeDialog();
+        } else {
+          openDialog(document.activeElement);
+        }
+      }
+    });
+
+    // 2. Header trigger button in BaseLayout.astro calls dialog.showModal() directly
+    //    via its inline onclick — we intercept the open event via the 'toggle' event
+    //    to ensure our state tracking (triggerElement) is always correct.
+    // NOTE: BaseLayout.astro contains:
+    //   onclick="document.getElementById('search-dialog')?.showModal()"
+    // We patch that button to call our openDialog() instead if it exists.
+    document.addEventListener('DOMContentLoaded', () => {
+      // Find the header search trigger button (identified by its aria-label)
+      const headerTrigger = document.querySelector<HTMLButtonElement>(
+        '[aria-label="Open search (Ctrl+K)"]'
+      );
+      if (headerTrigger) {
+        // Remove the existing inline onclick and replace with our controlled open
+        headerTrigger.removeAttribute('onclick');
+        headerTrigger.addEventListener('click', () => openDialog(headerTrigger));
+      }
+    });
+
+    // 3. Close button inside the dialog
+    closeBtn?.addEventListener('click', closeDialog);
+
+    // 4. Backdrop click (click lands on <dialog> itself, not its content) (Req 9.6)
+    dialog.addEventListener('click', (e: MouseEvent) => {
+      // The dialog element IS the backdrop when using showModal()
+      if (e.target === dialog) {
+        closeDialog();
+      }
+    });
+
+    // 5. Native 'close' event fires on Escape (browser handles the close) — we
+    //    need to clean up the focus trap and return focus.
+    dialog.addEventListener('close', () => {
+      dialog.removeEventListener('keydown', handleFocusTrap);
+      if (triggerElement && 'focus' in triggerElement) {
+        (triggerElement as HTMLElement).focus();
+      }
+      triggerElement = null;
+    });
+  })();
+</script>

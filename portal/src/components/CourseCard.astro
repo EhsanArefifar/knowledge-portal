@@ -1,0 +1,158 @@
+---
+/**
+ * CourseCard.astro
+ *
+ * Displays a single course card containing:
+ *   - Course name (derived via `folderToTitle` by the caller, passed as `displayName`)
+ *   - Provider name (from the course's `_course.json`)
+ *   - Note count (root-level .md files only)
+ *   - Source URL anchor — rendered only when `sourceUrl` is defined
+ *
+ * Intentionally omits duration, difficulty, ratings, and progress indicators.
+ *
+ * Requirements: 6.1, 6.2, 6.3
+ */
+
+interface Props {
+  /** Display name derived from the course folder via `folderToTitle` */
+  displayName: string;
+  /** Provider name sourced from `_course.json` */
+  provider: string;
+  /** Number of root-level .md files in the course folder */
+  noteCount: number;
+  /** Optional external URL for the course; omitted when undefined */
+  sourceUrl?: string;
+  /** URL-safe slug used for the card's link to `/courses/[slug]` */
+  slug: string;
+}
+
+const { displayName, provider, noteCount, sourceUrl, slug } = Astro.props;
+const courseHref = `/courses/${slug}`;
+---
+
+<article class="card course-card" aria-label={`Course: ${displayName}`}>
+  <!-- Course name — primary heading for the card, links to the course detail page -->
+  <h2 class="course-card__name">
+    <a href={courseHref} class="course-card__name-link">{displayName}</a>
+  </h2>
+
+  <!-- Provider — from _course.json -->
+  <p class="course-card__provider text-muted">
+    <span class="sr-only">Provider: </span>{provider}
+  </p>
+
+  <!-- Note count — derived from root-level .md files only (Req 2.5) -->
+  <p class="course-card__meta text-muted">
+    <span class="course-card__note-count">
+      {noteCount} {noteCount === 1 ? 'note' : 'notes'}
+    </span>
+  </p>
+
+  <!-- Source URL — rendered only when configured (Req 6.3) -->
+  {sourceUrl && (
+    <a
+      href={sourceUrl}
+      class="course-card__source-link btn"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`View ${displayName} source course (opens in new tab)`}
+    >
+      View course
+      {/* External link icon */}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        <polyline points="15 3 21 3 21 9" />
+        <line x1="10" y1="14" x2="21" y2="3" />
+      </svg>
+    </a>
+  )}
+</article>
+
+<style>
+  /* -------------------------------------------------------------------------
+     Card layout
+     .card base styles (surface color, border, radius, shadow) come from
+     global.css. These rules handle the internal card layout only.
+     Req 19.3, 19.4: subtle border + medium radius from .card global class.
+     ------------------------------------------------------------------------- */
+  .course-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem 1.5rem;
+  }
+
+  /* -------------------------------------------------------------------------
+     Course name
+     Req 6.1: display course name on card
+     ------------------------------------------------------------------------- */
+  .course-card__name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .course-card__name-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .course-card__name-link:hover,
+  .course-card__name-link:focus-visible {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* -------------------------------------------------------------------------
+     Provider text
+     Req 6.1: display provider name on card
+     .text-muted applied via global utility class
+     ------------------------------------------------------------------------- */
+  .course-card__provider {
+    font-size: 0.875rem;
+    margin: 0;
+  }
+
+  /* -------------------------------------------------------------------------
+     Meta row — note count
+     Req 6.1: display note count on card
+     Req 6.2: only verified metadata; no duration/difficulty/ratings/progress
+     ------------------------------------------------------------------------- */
+  .course-card__meta {
+    font-size: 0.8125rem;
+    margin: 0;
+  }
+
+  .course-card__note-count {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* -------------------------------------------------------------------------
+     Source URL link
+     Req 6.3: render when sourceUrl is defined; omit otherwise
+     Uses the .btn base styles from global.css for consistent interactive styling.
+     Pushed to the bottom of the flex column with margin-top: auto so it
+     always aligns at the card footer regardless of content height.
+     ------------------------------------------------------------------------- */
+  .course-card__source-link {
+    margin-top: auto;
+    align-self: flex-start;
+    font-size: 0.8125rem;
+    padding: 0.35rem 0.75rem;
+  }
+</style>

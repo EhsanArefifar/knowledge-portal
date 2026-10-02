@@ -1,0 +1,210 @@
+---
+/**
+ * resources.astro — Resources page
+ *
+ * Requirements: 4.7, 12.1, 12.2, 12.3
+ *
+ * - Resources grouped by category (Req 12.1)
+ * - ccstatusline entry must be present (Req 12.2)
+ * - Adding new entries/categories requires only data changes (Req 12.3)
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { resources } from '../data/resources';
+
+// Group resources by category
+const categoryMap = new Map<string, typeof resources>();
+for (const resource of resources) {
+  if (!categoryMap.has(resource.category)) {
+    categoryMap.set(resource.category, []);
+  }
+  categoryMap.get(resource.category)!.push(resource);
+}
+
+// Sort categories alphabetically for stable output
+const sortedCategories = Array.from(categoryMap.entries()).sort(([a], [b]) =>
+  a.localeCompare(b)
+);
+---
+
+<BaseLayout
+  title="Resources"
+  description="Tools and external resources for AI learning and development."
+>
+  <div class="container page-content">
+    <header class="page-header">
+      <h1 class="page-title">Resources</h1>
+      <p class="page-subtitle text-muted">
+        Useful tools and references for AI learning and development.
+      </p>
+    </header>
+
+    <!--
+      Resources grouped by category (Req 12.1).
+      ccstatusline must be present in the Developer Tools category (Req 12.2).
+      New entries require only data changes to resources.ts (Req 12.3).
+    -->
+    {sortedCategories.map(([category, categoryResources]) => (
+      <section class="resource-category" aria-labelledby={`cat-${category.toLowerCase().replace(/\s+/g, '-')}`}>
+        <h2
+          class="category-heading"
+          id={`cat-${category.toLowerCase().replace(/\s+/g, '-')}`}
+        >
+          {category}
+        </h2>
+        <ul class="resource-list" role="list">
+          {categoryResources.map((resource) => (
+            <li class="resource-item">
+              <article class="resource-card card" aria-label={resource.name}>
+                <header class="resource-card__header">
+                  <h3 class="resource-card__name">
+                    <a
+                      href={resource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${resource.name} (opens in new tab)`}
+                    >
+                      {resource.name}
+                    </a>
+                  </h3>
+                  <svg
+                    class="resource-card__ext-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </header>
+                <p class="resource-card__desc text-muted">{resource.description}</p>
+              </article>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    {sortedCategories.length === 0 && (
+      <p class="empty-state text-muted">No resources found.</p>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .page-content {
+    padding-block: 2rem;
+  }
+
+  .page-header {
+    margin-bottom: 1.75rem;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 0.25rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  /* =====================================================================
+     RESOURCE CATEGORIES
+     ===================================================================== */
+  .resource-category {
+    margin-bottom: 2.5rem;
+  }
+
+  .category-heading {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* =====================================================================
+     RESOURCE LIST
+     ===================================================================== */
+  .resource-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .resource-item {
+    display: flex;
+  }
+
+  /* =====================================================================
+     RESOURCE CARD
+     ===================================================================== */
+  .resource-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    width: 100%;
+  }
+
+  .resource-card__header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .resource-card__name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .resource-card__name a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .resource-card__name a:hover,
+  .resource-card__name a:focus-visible {
+    text-decoration: underline;
+  }
+
+  .resource-card__ext-icon {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  .resource-card__desc {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .empty-state {
+    font-style: italic;
+  }
+
+  @media (max-width: 639px) {
+    .resource-list {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

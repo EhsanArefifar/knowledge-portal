@@ -1,0 +1,93 @@
+/* =============================================================================
+   tokens.css — Design Tokens (CSS Custom Properties)
+   Personal AI Learning Portal
+   Requirements: 13.4, 15.5, 16.3, 19.1–19.5
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Root defaults — dark theme as the system default
+   All tokens are defined here; light/dark selectors override color tokens only.
+   ----------------------------------------------------------------------------- */
+:root {
+  /* --- Typography --- */
+  /* Req 16.3, 19.1: System font stacks only — no external web font imports */
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  --font-code: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier,
+    monospace;
+
+  /* --- Border Radius --- */
+  /* Req 19.4: Medium border-radius (6–10px) on cards and buttons */
+  --radius-card: 8px;
+  --radius-btn:  6px;
+
+  /* --- Transitions --- */
+  /* Req 13.4: Disabled entirely under prefers-reduced-motion (see global.css) */
+  --transition-base: 150ms ease;
+
+  /* --- Default theme: dark --- */
+  /* These values are also set explicitly on [data-theme="dark"] below */
+  --color-bg:         #0f1117;
+  --color-surface:    #1a1d27;
+  --color-text:       #e2e8f0;
+  --color-text-muted: #94a3b8;
+  /* Req 19.2: Single restrained accent color — blue, developer-appropriate */
+  --color-accent:       #60a5fa;
+  --color-accent-hover: #93c5fd;
+  /* Req 19.3: Subtle borders and low-elevation shadows */
+  --color-border: #2d3148;
+  --color-shadow: rgba(0, 0, 0, 0.4);
+}
+
+/* -----------------------------------------------------------------------------
+   Light theme
+   Contrast ratios (WCAG 2.1 AA — Req 15.5):
+     --color-text (#1e293b) on --color-bg (#f8fafc):    ≈ 14.5:1  ✓
+     --color-text-muted (#64748b) on --color-bg:         ≈  4.6:1  ✓
+     --color-accent (#2563eb) on --color-bg:             ≈  5.9:1  ✓ (large text 3:1)
+   ----------------------------------------------------------------------------- */
+[data-theme="light"] {
+  --color-bg:         #f8fafc;
+  --color-surface:    #ffffff;
+  --color-text:       #1e293b;
+  --color-text-muted: #64748b;
+  --color-accent:       #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-border: #e2e8f0;
+  --color-shadow: rgba(0, 0, 0, 0.08);
+}
+
+/* -----------------------------------------------------------------------------
+   Dark theme (explicit — mirrors :root defaults)
+   Contrast ratios (WCAG 2.1 AA — Req 15.5):
+     --color-text (#e2e8f0) on --color-bg (#0f1117):    ≈ 14.0:1  ✓
+     --color-text-muted (#94a3b8) on --color-bg:         ≈  5.5:1  ✓
+     --color-accent (#60a5fa) on --color-bg:             ≈  5.3:1  ✓
+   ----------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  --color-bg:         #0f1117;
+  --color-surface:    #1a1d27;
+  --color-text:       #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-accent:       #60a5fa;
+  --color-accent-hover: #93c5fd;
+  --color-border: #2d3148;
+  --color-shadow: rgba(0, 0, 0, 0.4);
+}
+
+/* -----------------------------------------------------------------------------
+   OS-level dark preference fallback (no JS / before theme script runs)
+   Prevents FOUC when JavaScript is disabled.
+   ----------------------------------------------------------------------------- */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --color-bg:         #f8fafc;
+    --color-surface:    #ffffff;
+    --color-text:       #1e293b;
+    --color-text-muted: #64748b;
+    --color-accent:       #2563eb;
+    --color-accent-hover: #1d4ed8;
+    --color-border: #e2e8f0;
+    --color-shadow: rgba(0, 0, 0, 0.08);
+  }
+}

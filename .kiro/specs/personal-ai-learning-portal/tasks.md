@@ -241,7 +241,7 @@ Implement a fully-static, GitHub Pages-compatible personal AI learning portal us
     - Tag: `// Feature: personal-ai-learning-portal, Property 13`
     - _Requirements: 13.3_
 
-- [ ] 10. Configure GitHub Actions CI/CD pipeline
+- [x] 10. Configure GitHub Actions CI/CD pipeline
   - Create `.github/workflows/deploy.yml` at the repo root
   - Trigger on push to default branch (`main`)
   - Steps: checkout, Node.js setup, `npm install`, `npm run build` — fail the workflow on non-zero exit

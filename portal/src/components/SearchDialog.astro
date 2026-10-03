@@ -300,6 +300,7 @@ import Icon from './Icon.astro';
   }
 
   async function search(query: string): Promise<void> {
+    if (!pagefind) status.textContent = 'Loading search index…';
     const pf = pagefind ?? (await load());
     if (!pf) return;
     const q = query.trim();

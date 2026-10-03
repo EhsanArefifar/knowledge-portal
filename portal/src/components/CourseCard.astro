@@ -1,158 +1,177 @@
 ---
-/**
- * CourseCard.astro
- *
- * Displays a single course card containing:
- *   - Course name (derived via `folderToTitle` by the caller, passed as `displayName`)
- *   - Provider name (from the course's `_course.json`)
- *   - Note count (root-level .md files only)
- *   - Source URL anchor — rendered only when `sourceUrl` is defined
- *
- * Intentionally omits duration, difficulty, ratings, and progress indicators.
- *
- * Requirements: 6.1, 6.2, 6.3
- */
+/** Course summary card: provider logo, stats, reading progress and links. */
+import Icon from './Icon.astro';
+import ProviderLogo from './ProviderLogo.astro';
+import { formatMinutes, type Course } from '../lib/content';
 
 interface Props {
-  /** Display name derived from the course folder via `folderToTitle` */
-  displayName: string;
-  /** Provider name sourced from `_course.json` */
-  provider: string;
-  /** Number of root-level .md files in the course folder */
-  noteCount: number;
-  /** Optional external URL for the course; omitted when undefined */
-  sourceUrl?: string;
-  /** URL-safe slug used for the card's link to `/courses/[slug]` */
-  slug: string;
+  course: Course;
 }
 
-const { displayName, provider, noteCount, sourceUrl, slug } = Astro.props;
-const courseHref = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/courses/${slug}`;
+const { course } = Astro.props;
+const first = course.sections[0];
+const ids = course.sections.map((s) => s.id).join('|');
 ---
 
-<article class="card course-card" aria-label={`Course: ${displayName}`}>
-  <!-- Course name — primary heading for the card, links to the course detail page -->
-  <h2 class="course-card__name">
-    <a href={courseHref} class="course-card__name-link">{displayName}</a>
-  </h2>
+<article class="course card" style={`--brand:${course.provider.color}`} data-progress={ids}>
+  <div class="glow" aria-hidden="true"></div>
+  <header class="top">
+    <ProviderLogo provider={course.provider} size={44} />
+    <div class="who">
+      <span class="provider">{course.provider.name}</span>
+      <h3 class="title"><a href={course.url}>{course.title}</a></h3>
+    </div>
+    <span class="badge badge-accent status">Current</span>
+  </header>
 
-  <!-- Provider — from _course.json -->
-  <p class="course-card__provider text-muted">
-    <span class="sr-only">Provider: </span>{provider}
-  </p>
+  {course.description && <p class="desc">{course.description}</p>}
 
-  <!-- Note count — derived from root-level .md files only (Req 2.5) -->
-  <p class="course-card__meta text-muted">
-    <span class="course-card__note-count">
-      {noteCount} {noteCount === 1 ? 'note' : 'notes'}
-    </span>
-  </p>
+  <ul class="stats" aria-label="Course stats">
+    <li><Icon name="layers" size={15} />{course.sections.length} chapters</li>
+    <li><Icon name="clock" size={15} />{formatMinutes(course.totalMinutes)}</li>
+    {course.assetCount > 0 && <li><Icon name="bot" size={15} />{course.assetCount} assets</li>}
+  </ul>
 
-  <!-- Source URL — rendered only when configured (Req 6.3) -->
-  {sourceUrl && (
-    <a
-      href={sourceUrl}
-      class="course-card__source-link btn"
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`View ${displayName} source course (opens in new tab)`}
-    >
-      View course
-      {/* External link icon */}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-        <polyline points="15 3 21 3 21 9" />
-        <line x1="10" y1="14" x2="21" y2="3" />
-      </svg>
-    </a>
-  )}
+  <div class="progress-row">
+    <div class="progress"><span></span></div>
+    <span class="progress-label" data-progress-label>Not started</span>
+  </div>
+
+  <footer class="links">
+    {
+      first && (
+        <a class="btn btn-primary" href={first.url} data-continue={course.slug}>
+          <span data-continue-label>Start reading</span>
+          <Icon name="arrowRight" size={16} />
+        </a>
+      )
+    }
+    <a class="btn btn-ghost" href={course.url}>Overview</a>
+    {
+      course.sourceUrl && (
+        <a class="btn btn-ghost ext" href={course.sourceUrl} target="_blank" rel="noopener noreferrer">
+          Course site <Icon name="external" size={14} />
+        </a>
+      )
+    }
+  </footer>
 </article>
 
 <style>
-  /* -------------------------------------------------------------------------
-     Card layout
-     .card base styles (surface color, border, radius, shadow) come from
-     global.css. These rules handle the internal card layout only.
-     Req 19.3, 19.4: subtle border + medium radius from .card global class.
-     ------------------------------------------------------------------------- */
-  .course-card {
+  .course {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 1.25rem 1.5rem;
+    gap: 1rem;
+    padding: 1.4rem;
+    overflow: hidden;
+    transition: transform var(--t), box-shadow var(--t), border-color var(--t);
   }
 
-  /* -------------------------------------------------------------------------
-     Course name
-     Req 6.1: display course name on card
-     ------------------------------------------------------------------------- */
-  .course-card__name {
-    font-size: 1.1rem;
+  .course:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--border-strong);
+  }
+
+  .glow {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 120px;
+    background: radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 70%);
+    pointer-events: none;
+  }
+
+  .top {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .who {
+    min-width: 0;
+  }
+
+  .provider {
+    font-size: 0.78rem;
     font-weight: 600;
-    line-height: 1.3;
-    color: var(--color-text);
-    margin: 0;
+    color: var(--text-muted);
   }
 
-  .course-card__name-link {
-    color: inherit;
-    text-decoration: none;
+  .title {
+    margin: 0.1rem 0 0;
+    font-size: 1.15rem;
+    font-weight: 700;
   }
 
-  .course-card__name-link:hover,
-  .course-card__name-link:focus-visible {
-    color: var(--color-accent);
-    text-decoration: underline;
-    text-underline-offset: 3px;
+  .title a {
+    color: var(--text);
   }
 
-  /* -------------------------------------------------------------------------
-     Provider text
-     Req 6.1: display provider name on card
-     .text-muted applied via global utility class
-     ------------------------------------------------------------------------- */
-  .course-card__provider {
-    font-size: 0.875rem;
-    margin: 0;
+  .title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
   }
 
-  /* -------------------------------------------------------------------------
-     Meta row — note count
-     Req 6.1: display note count on card
-     Req 6.2: only verified metadata; no duration/difficulty/ratings/progress
-     ------------------------------------------------------------------------- */
-  .course-card__meta {
-    font-size: 0.8125rem;
-    margin: 0;
-  }
-
-  .course-card__note-count {
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* -------------------------------------------------------------------------
-     Source URL link
-     Req 6.3: render when sourceUrl is defined; omit otherwise
-     Uses the .btn base styles from global.css for consistent interactive styling.
-     Pushed to the bottom of the flex column with margin-top: auto so it
-     always aligns at the card footer regardless of content height.
-     ------------------------------------------------------------------------- */
-  .course-card__source-link {
-    margin-top: auto;
+  .status {
+    margin-left: auto;
     align-self: flex-start;
-    font-size: 0.8125rem;
-    padding: 0.35rem 0.75rem;
+  }
+
+  .desc {
+    position: relative;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+  }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .stats li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: auto;
+  }
+
+  .progress-row .progress {
+    flex: 1;
+  }
+
+  .progress-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .links {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .ext {
+    margin-left: auto;
   }
 </style>

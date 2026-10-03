@@ -1,132 +1,57 @@
 ---
-/**
- * courses/index.astro — Courses Index
- *
- * Requirements: 4.2, 6.1
- *
- * - Lists all discovered courses with CourseCard components
- * - Displays note count per course (root-level .md files only)
- */
-
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CourseCard from '../../components/CourseCard.astro';
-import { toSlug, folderToTitle, countNotes } from '../../lib/naming';
+import { getCourses, href } from '../../lib/content';
 
-// ─── Content discovery ──────────────────────────────────────────────────────
-
-const allNotes = await getCollection('notes');
-
-const courseFolderSet = new Set<string>();
-for (const entry of allNotes) {
-  const folder = entry.id.split('/')[0];
-  if (folder) courseFolderSet.add(folder);
-}
-const courseFolders = Array.from(courseFolderSet).sort();
-
-// Load per-course metadata
-const courseMetaMap: Record<string, { provider: string; sourceUrl?: string }> = {};
-
-try {
-  const meta = await import('../../../../Claude-academy/_course.json');
-  courseMetaMap['Claude-academy'] = meta.default ?? meta;
-} catch { /* not found */ }
-
-try {
-  const meta = await import('../../../../NetNinja-masterclass/_course.json');
-  courseMetaMap['NetNinja-masterclass'] = meta.default ?? meta;
-} catch { /* not found */ }
-
-interface CourseModel {
-  slug: string;
-  folderName: string;
-  displayName: string;
-  provider: string;
-  sourceUrl?: string;
-  noteCount: number;
-}
-
-const courses: CourseModel[] = courseFolders.map((folderName) => {
-  const meta = courseMetaMap[folderName];
-  return {
-    slug: toSlug(folderName),
-    folderName,
-    displayName: folderToTitle(folderName),
-    provider: meta?.provider ?? folderToTitle(folderName),
-    sourceUrl: meta?.sourceUrl,
-    noteCount: countNotes(allNotes, folderName),
-  };
-});
+const courses = await getCourses();
 ---
 
-<BaseLayout
-  title="Courses"
-  description="Browse all available AI learning courses."
->
-  <div class="container page-content">
-    <header class="page-header">
-      <h1 class="page-title">Courses</h1>
-      <p class="page-subtitle text-muted">
-        {courses.length} {courses.length === 1 ? 'course' : 'courses'} discovered
-      </p>
+<BaseLayout title="Courses">
+  <div class="container page">
+    <header class="head">
+      <p class="eyebrow">Library</p>
+      <h1>Courses</h1>
+      <p class="muted">Every course with notes in this repository. Progress is saved in this browser.</p>
     </header>
 
-    {courses.length > 0 ? (
-      <div class="cards-grid">
-        {courses.map((course) => (
-          <CourseCard
-            displayName={course.displayName}
-            provider={course.provider}
-            noteCount={course.noteCount}
-            sourceUrl={course.sourceUrl}
-            slug={course.slug}
-          />
-        ))}
-      </div>
-    ) : (
-      <p class="empty-state text-muted">
-        No courses found. Add a folder with at least one Markdown file to the
-        repository root to have it appear here.
-      </p>
-    )}
+    <div class="grid">
+      {courses.map((course) => <CourseCard course={course} />)}
+    </div>
+
+    <p class="more muted">
+      Looking for what's next? See the <a href={href('next-courses/')}>upcoming courses</a>.
+    </p>
   </div>
 </BaseLayout>
 
 <style>
-  .page-content {
-    padding-block: 2rem;
+  .page {
+    padding-top: 2.5rem;
   }
 
-  .page-header {
-    margin-bottom: 1.75rem;
+  .head {
+    margin-bottom: 2rem;
   }
 
-  .page-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--color-text);
-    margin: 0 0 0.25rem;
+  h1 {
+    margin: 0.25rem 0 0.4rem;
+    font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
   }
 
-  .page-subtitle {
-    font-size: 0.9rem;
+  .head p {
     margin: 0;
   }
 
-  .cards-grid {
+  .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
     gap: 1.25rem;
   }
 
-  .empty-state {
-    font-style: italic;
-    max-width: 42ch;
-  }
-
-  @media (max-width: 639px) {
-    .cards-grid {
-      grid-template-columns: 1fr;
-    }
+  .more {
+    margin-top: 2rem;
+    font-size: 0.9rem;
   }
 </style>

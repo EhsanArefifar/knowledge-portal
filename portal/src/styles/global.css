@@ -1,490 +1,99 @@
 /* =============================================================================
-   global.css — Base Styles, Layout Utilities, and Responsive Grid
-   Personal AI Learning Portal
-   Requirements: 13.4, 14.1–14.4, 15.5, 16.3, 19.1–19.5
-
-   Usage: import '../styles/global.css' in BaseLayout.astro
+   Global styles: reset, base elements, shared UI primitives and the .prose
+   reading styles used for rendered notes.
    ============================================================================= */
 
-@import './tokens.css';
-
-/* =============================================================================
-   1. Box-sizing reset
-   ============================================================================= */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
-/* =============================================================================
-   2. Base document styles
-   Req 16.3, 19.1: System font stacks, no external @import
-   ============================================================================= */
 html {
-  /* Smooth scrolling — disabled under prefers-reduced-motion (section 9) */
-  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 1.5rem);
 }
 
 body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   font-family: var(--font-ui);
   font-size: 1rem;
-  /* Req 19.5: line-height ≥ 1.6 */
-  line-height: 1.7;
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  /* Prevent horizontal overflow on narrow viewports (Req 14.4) */
-  overflow-x: hidden;
-  min-width: 320px;
+  line-height: 1.6;
+  color: var(--text);
+  background-color: var(--bg);
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* =============================================================================
-   3. Typography
-   ============================================================================= */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-ui);
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--color-text);
+main {
+  flex: 1;
 }
 
-h1 { font-size: 2rem; }
-h2 { font-size: 1.5rem; }
-h3 { font-size: 1.25rem; }
-h4 { font-size: 1.125rem; }
-h5, h6 { font-size: 1rem; }
-
-p {
-  /* Req 19.5: comfortable paragraph line length */
-  margin-block: 0.75em;
+img,
+svg {
+  max-width: 100%;
 }
 
 a {
-  color: var(--color-accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color var(--transition-base);
+  color: var(--accent);
+  text-decoration: none;
 }
 
-a:hover,
-a:focus-visible {
-  color: var(--color-accent-hover);
+a:hover {
+  color: var(--accent-hover);
 }
 
-/* Req 19.1: monospace / code font */
-code,
-kbd,
-samp,
-pre {
-  font-family: var(--font-code);
-  font-size: 0.875em;
+button {
+  font: inherit;
+  color: inherit;
 }
 
-pre {
-  overflow-x: auto;
-  padding: 1rem 1.25rem;
-  border-radius: var(--radius-card);
-  border: 1px solid var(--color-border);
-  background-color: var(--color-surface);
-  /* Req 19.3: subtle box shadow */
-  box-shadow: 0 1px 3px var(--color-shadow);
-}
-
-code:not(pre code) {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  padding: 0.1em 0.35em;
-}
-
-blockquote {
-  border-left: 3px solid var(--color-accent);
-  padding-left: 1rem;
-  color: var(--color-text-muted);
-  margin-block: 1rem;
-}
-
-hr {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin-block: 1.5rem;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  border-radius: var(--radius-card);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-th, td {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
-  text-align: left;
-}
-
-th {
-  background-color: var(--color-surface);
-  font-weight: 600;
-}
-
-/* =============================================================================
-   4. Focus ring — WCAG 2.1 AA non-text contrast (Req 15.3)
-   3px outline offset from element edge, using the accent color at full opacity
-   ============================================================================= */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
-  border-radius: 2px;
-}
-
-/* Remove default focus ring for mouse users while keeping it for keyboard */
-:focus:not(:focus-visible) {
-  outline: none;
-}
-
-/* =============================================================================
-   5. Skip-to-content link (Req 15.2, 15.4)
-   Visually hidden until focused — appears at the top of the page for keyboard users
-   ============================================================================= */
-.skip-to-content {
-  position: absolute;
-  top: -9999px;
-  left: 1rem;
-  z-index: 9999;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-accent);
-  color: #fff;
-  font-weight: 600;
-  border-radius: var(--radius-btn);
-  text-decoration: none;
-  transition: top var(--transition-base);
-}
-
-.skip-to-content:focus-visible {
-  top: 1rem;
-  outline: 2px solid var(--color-bg);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* =============================================================================
-   6. Card and button shared aesthetics
-   Req 19.3, 19.4: subtle borders, medium border-radius
-   ============================================================================= */
-.card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  box-shadow: 0 1px 3px var(--color-shadow);
-  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+::selection {
+  background: var(--accent-soft);
 }
 
-.card:hover {
-  box-shadow: 0 2px 8px var(--color-shadow);
-  border-color: var(--color-accent);
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--text);
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.9rem;
-  font-family: var(--font-ui);
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--color-text);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-btn);
-  cursor: pointer;
-  text-decoration: none;
-  transition: background-color var(--transition-base), border-color var(--transition-base),
-    color var(--transition-base);
+kbd {
+  font-family: var(--font-code);
+  font-size: 0.72em;
+  padding: 0.15em 0.45em;
+  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  background: var(--surface);
+  color: var(--text-muted);
 }
 
-.btn:hover,
-.btn:focus-visible {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-  color: #fff;
-}
-
-.btn-primary {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-  color: #fff;
-}
-
-.btn-primary:hover,
-.btn-primary:focus-visible {
-  background-color: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
-}
-
-/* =============================================================================
-   7. Note content column
-   Req 19.5: line-height ≥ 1.6, max-width ≤ 72ch
-   ============================================================================= */
-.note-content {
-  max-width: 72ch;
+/* -----------------------------------------------------------------------------
+   Layout primitives
+   ----------------------------------------------------------------------------- */
+.container {
   width: 100%;
-  line-height: 1.75;
-  /* Ensure prose stays readable even inside flex/grid parents */
-  min-width: 0;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
 }
 
-.note-content h1,
-.note-content h2,
-.note-content h3,
-.note-content h4,
-.note-content h5,
-.note-content h6 {
-  margin-top: 1.75em;
-  margin-bottom: 0.5em;
-}
-
-.note-content ul,
-.note-content ol {
-  padding-left: 1.5rem;
-  margin-block: 0.75em;
-}
-
-.note-content li + li {
-  margin-top: 0.25em;
-}
-
-.note-content li > ul,
-.note-content li > ol {
-  margin-top: 0.25em;
-}
-
-/* =============================================================================
-   8. Three-column note reader layout
-   Req 7.1, 14.1–14.3
-   Column structure: [left sidebar] [content] [right sidebar (TOC)]
-   ============================================================================= */
-
-/* --- Desktop: three columns (≥ 1024px) --- */
-.layout-three-col {
-  display: grid;
-  grid-template-columns: 240px 1fr 220px;
-  grid-template-rows: 1fr;
-  gap: 0;
-  min-height: 100vh;
-  align-items: start;
-}
-
-.layout-three-col .sidebar-left {
-  grid-column: 1;
-  position: sticky;
-  top: 0;
-  max-height: 100vh;
-  overflow-y: auto;
-  border-right: 1px solid var(--color-border);
-  padding: 1.5rem 1rem;
-}
-
-.layout-three-col .layout-content {
-  grid-column: 2;
-  padding: 2rem 2.5rem;
-  min-width: 0;
-}
-
-.layout-three-col .sidebar-right {
-  grid-column: 3;
-  position: sticky;
-  top: 0;
-  max-height: 100vh;
-  overflow-y: auto;
-  border-left: 1px solid var(--color-border);
-  padding: 1.5rem 1rem;
-}
-
-/* --- Tablet: two columns (640px – 1023px) --- */
-.layout-two-col {
-  display: grid;
-  grid-template-columns: 1fr 200px;
-  gap: 0;
-  min-height: 100vh;
-  align-items: start;
-}
-
-.layout-two-col .sidebar-left {
-  display: none;  /* off-canvas — accessed via toggle button */
-}
-
-.layout-two-col .layout-content {
-  grid-column: 1;
-  padding: 1.5rem;
-  min-width: 0;
-}
-
-.layout-two-col .sidebar-right {
-  grid-column: 2;
-  position: sticky;
-  top: 0;
-  max-height: 100vh;
-  overflow-y: auto;
-  border-left: 1px solid var(--color-border);
-  padding: 1.25rem 0.75rem;
-}
-
-/* --- Mobile: single column (< 640px) --- */
-.layout-single-col {
-  display: block;
-  min-height: 100vh;
-}
-
-.layout-single-col .sidebar-left,
-.layout-single-col .sidebar-right {
-  /* Both sidebars hidden by default — left via DrawerNav, right hidden on mobile */
-  display: none;
-}
-
-.layout-single-col .layout-content {
-  padding: 1rem;
-  min-width: 0;
-}
-
-/* =============================================================================
-   9. Responsive media queries
-   Req 14.1–14.4: breakpoints at 1024px and 640px
-   ============================================================================= */
-
-/* ≥ 1024px — desktop: three-column layout active */
-@media (min-width: 1024px) {
-  .layout-reader {
-    display: grid;
-    grid-template-columns: 240px 1fr 220px;
-    align-items: start;
-    min-height: 100vh;
-  }
-
-  .layout-reader .sidebar-left {
-    display: block;
-    grid-column: 1;
-    position: sticky;
-    top: 0;
-    max-height: 100vh;
-    overflow-y: auto;
-    border-right: 1px solid var(--color-border);
-    padding: 1.5rem 1rem;
-  }
-
-  .layout-reader .layout-content {
-    grid-column: 2;
-    padding: 2rem 2.5rem;
-    min-width: 0;
-  }
-
-  .layout-reader .sidebar-right {
-    display: block;
-    grid-column: 3;
-    position: sticky;
-    top: 0;
-    max-height: 100vh;
-    overflow-y: auto;
-    border-left: 1px solid var(--color-border);
-    padding: 1.5rem 1rem;
-  }
-}
-
-/* 640px – 1023px — tablet: two-column layout */
-@media (min-width: 640px) and (max-width: 1023px) {
-  .layout-reader {
-    display: grid;
-    grid-template-columns: 1fr 200px;
-    align-items: start;
-    min-height: 100vh;
-  }
-
-  .layout-reader .sidebar-left {
-    display: none; /* off-canvas; shown via DrawerNav toggle */
-  }
-
-  .layout-reader .layout-content {
-    grid-column: 1;
-    padding: 1.5rem;
-    min-width: 0;
-  }
-
-  .layout-reader .sidebar-right {
-    display: block;
-    grid-column: 2;
-    position: sticky;
-    top: 0;
-    max-height: 100vh;
-    overflow-y: auto;
-    border-left: 1px solid var(--color-border);
-    padding: 1.25rem 0.75rem;
-  }
-}
-
-/* < 640px — mobile: single-column layout with drawer navigation */
-@media (max-width: 639px) {
-  .layout-reader {
-    display: block;
-    min-height: 100vh;
-  }
-
-  .layout-reader .sidebar-left,
-  .layout-reader .sidebar-right {
-    display: none; /* left = DrawerNav, right = hidden on mobile */
-  }
-
-  .layout-reader .layout-content {
-    padding: 1rem;
-    min-width: 0;
-  }
-
-  /* Course cards grid: single column on mobile */
-  .courses-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-/* =============================================================================
-   10. Reduced-motion — Req 13.4, 15.6
-   Disables ALL CSS transitions and animations when the user has requested
-   reduced motion at the OS level.
-   ============================================================================= */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition: none !important;
-    animation: none !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* =============================================================================
-   11. Course cards grid (homepage / courses index)
-   ============================================================================= */
-.courses-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.25rem;
-  padding: 0;
-  list-style: none;
-}
-
-/* =============================================================================
-   12. Utility classes
-   ============================================================================= */
-
-/* Visually hidden — accessible to screen readers, invisible on screen */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -494,52 +103,432 @@ th {
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
-  border-width: 0;
+  border: 0;
 }
 
-/* Muted / secondary text */
-.text-muted {
-  color: var(--color-text-muted);
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 1000;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
 }
 
-/* Accent text */
-.text-accent {
-  color: var(--color-accent);
+.skip-link:focus {
+  top: 0.75rem;
 }
 
-/* Container — horizontally centered, capped width */
-.container {
-  width: 100%;
-  max-width: 1280px;
-  margin-inline: auto;
-  padding-inline: 1.5rem;
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-/* Flex row with gap */
-.flex-row {
-  display: flex;
-  flex-wrap: wrap;
+.muted {
+  color: var(--text-muted);
+}
+
+/* -----------------------------------------------------------------------------
+   Buttons
+   ----------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 550;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color var(--t-fast), border-color var(--t-fast), color var(--t-fast), transform var(--t-fast);
 }
 
-/* =============================================================================
-   13. Scrollbar styling (subtle, non-obtrusive)
-   ============================================================================= */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+.btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
-::-webkit-scrollbar-track {
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-contrast);
+}
+
+.btn-ghost {
+  border-color: transparent;
   background: transparent;
+  color: var(--text-muted);
 }
 
-::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: 3px;
+.btn-ghost:hover {
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-text-muted);
+.btn-sm {
+  height: 2rem;
+  padding: 0 0.7rem;
+  font-size: 0.8125rem;
+}
+
+.btn-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+}
+
+.btn svg {
+  flex-shrink: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Cards, badges, progress
+   ----------------------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.badge-accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.progress {
+  --pct: 0%;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  width: var(--pct);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--success)));
+  transition: width 600ms var(--ease);
+}
+
+.section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+}
+
+.section-title h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 650;
+}
+
+.section-title a {
+  font-size: 0.875rem;
+  font-weight: 550;
+}
+
+/* -----------------------------------------------------------------------------
+   Prose — rendered Markdown notes, tuned for long reading sessions
+   ----------------------------------------------------------------------------- */
+.prose {
+  font-size: var(--reader-size);
+  line-height: 1.75;
+  color: var(--text-prose);
+  max-width: var(--reader-measure);
+  overflow-wrap: break-word;
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose table,
+.prose pre {
+  margin: 0 0 1.15em;
+}
+
+.prose strong {
+  color: var(--text);
+  font-weight: 650;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset: 3px;
+}
+
+.prose a:hover {
+  text-decoration-color: currentColor;
+}
+
+.prose h2 {
+  font-size: 1.45em;
+  font-weight: 700;
+  margin: 2.2em 0 0.7em;
+}
+
+.prose h3 {
+  font-size: 1.2em;
+  font-weight: 650;
+  margin: 2.4em 0 0.7em;
+  padding-top: 1.4em;
+  border-top: 1px solid var(--border);
+}
+
+.prose h4 {
+  font-size: 1.02em;
+  font-weight: 650;
+  margin: 1.8em 0 0.5em;
+}
+
+.prose h2,
+.prose h3,
+.prose h4 {
+  scroll-margin-top: calc(var(--header-h) + 1.5rem);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.4em;
+}
+
+.prose li {
+  margin: 0.35em 0;
+  padding-left: 0.2em;
+}
+
+.prose li::marker {
+  color: var(--text-faint);
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin: 0.35em 0;
+}
+
+.prose hr {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: 2.5em 0;
+}
+
+.prose em {
+  color: var(--text);
+}
+
+.prose blockquote {
+  margin-left: 0;
+  padding: 0.85em 1.1em;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.prose :not(pre) > code {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  padding: 0.15em 0.4em;
+  border-radius: 5px;
+  background: var(--code-inline-bg);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.prose table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.92em;
+  line-height: 1.55;
+}
+
+.prose th,
+.prose td {
+  padding: 0.6em 0.9em;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+.prose th {
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.prose tr:last-child td {
+  border-bottom: none;
+}
+
+.prose tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+}
+
+/* Code blocks — Shiki dual themes (defaultColor: false) */
+.prose pre,
+.code-block pre {
+  position: relative;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--code-bg) !important;
+  font-family: var(--font-code);
+  font-size: 0.84em;
+  line-height: 1.65;
+  overflow-x: auto;
+  tab-size: 2;
+}
+
+.prose pre code,
+.code-block pre code {
+  font-family: inherit;
+  background: none;
+  padding: 0;
+}
+
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light);
+}
+
+:root[data-theme='dark'] .astro-code,
+:root[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark);
+}
+
+/* Copy button injected on <pre> blocks */
+.pre-wrap {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 1.85rem;
+  padding: 0 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--t-fast), color var(--t-fast);
+}
+
+.pre-wrap:hover .copy-btn,
+.copy-btn:focus-visible,
+.copy-btn[data-copied] {
+  opacity: 1;
+}
+
+.copy-btn[data-copied] {
+  color: var(--success);
+}
+
+@media (hover: none) {
+  .copy-btn {
+    opacity: 1;
+  }
+}
+
+/* Mermaid diagrams — inline SVG at build time, framed by enhanceDiagrams() */
+.prose .diagram {
+  margin: 1.5em 0;
+  padding: 1.25rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  scrollbar-width: thin;
+}
+
+.prose .diagram svg {
+  display: block;
+  height: auto;
+  margin-inline: auto;
+}
+
+/* inline-svg has no dark variant; invert the neutral theme instead */
+:root[data-theme='dark'] .prose .diagram {
+  filter: invert(0.9) hue-rotate(180deg);
+  border-color: #dddddd;
+}
+
+/* -----------------------------------------------------------------------------
+   Reduced motion
+   ----------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

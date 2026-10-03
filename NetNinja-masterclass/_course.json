@@ -1,4 +1,6 @@
 {
+  "title": "Claude Code Masterclass",
   "provider": "Net Ninja",
-  "sourceUrl": "https://netninja.dev/courses/enrolled/2931538"
+  "sourceUrl": "https://netninja.dev/courses/enrolled/2931538",
+  "description": "Commands, context, plan mode, MCP, skills, subagents and GitHub workflows — plus the reusable agents, commands and skills built along the way."
 }

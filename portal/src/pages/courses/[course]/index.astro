@@ -1,373 +1,180 @@
 ---
-/**
- * courses/[course]/index.astro — Course Detail Page
- *
- * Requirements: 4.3, 8.1, 8.2, 8.3, 8.5
- *
- * - getStaticPaths() generates one route per discovered course
- * - Lists all notes for the course with links to note reader pages
- * - Displays assets section grouped by Asset_Category when assets exist
- */
-
+/** Course hub — header, progress, chapters per note and reusable assets. */
 import type { GetStaticPaths } from 'astro';
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import Breadcrumb from '../../../components/Breadcrumb.astro';
-import { toSlug, folderToTitle, extractTitle, countNotes } from '../../../lib/naming';
+import AssetList from '../../../components/AssetList.astro';
+import ChapterList from '../../../components/ChapterList.astro';
+import Icon from '../../../components/Icon.astro';
+import ProviderLogo from '../../../components/ProviderLogo.astro';
+import { formatMinutes, getCourses, href, type Course } from '../../../lib/content';
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const allNotes = await getCollection('notes');
-  const allAssets = await getCollection('assets');
-
-  // Collect unique course folders
-  const courseFolderSet = new Set<string>();
-  for (const entry of allNotes) {
-    const folder = entry.id.split('/')[0];
-    if (folder) courseFolderSet.add(folder);
-  }
-
-  // Load course metadata
-  const courseMetaMap: Record<string, { provider: string; sourceUrl?: string }> = {};
-  try {
-    const meta = await import('../../../../../Claude-academy/_course.json');
-    courseMetaMap['Claude-academy'] = meta.default ?? meta;
-  } catch { /* not found */ }
-  try {
-    const meta = await import('../../../../../NetNinja-masterclass/_course.json');
-    courseMetaMap['NetNinja-masterclass'] = meta.default ?? meta;
-  } catch { /* not found */ }
-
-  return Array.from(courseFolderSet).map((folderName) => {
-    const slug = toSlug(folderName);
-    const meta = courseMetaMap[folderName];
-
-    // Collect notes belonging to this course (root-level only — no assets/)
-    const courseNotes = allNotes
-      .filter((entry) => {
-        const prefix = `${folderName}/`;
-        if (!entry.id.startsWith(prefix)) return false;
-        const remainder = entry.id.slice(prefix.length);
-        return !remainder.includes('/');
-      })
-      .sort((a, b) => a.id.localeCompare(b.id)); // filesystem order
-
-    const noteModels = courseNotes.map((entry) => {
-      const filename = entry.id.split('/').pop() ?? entry.id;
-      return {
-        slug: toSlug(filename),
-        filename,
-        displayTitle: extractTitle(entry.body ?? '', filename),
-        entryId: entry.id,
-      };
-    });
-
-    // Collect assets belonging to this course
-    // Asset IDs: "<course>/assets/<category>/<filename>"
-    const courseAssets = allAssets.filter((a) => a.id.startsWith(`${folderName}/`));
-
-    // Group assets by category (3rd segment: index 2)
-    const assetsByCategory = new Map<string, typeof courseAssets>();
-    for (const asset of courseAssets) {
-      const parts = asset.id.split('/');
-      // parts[0] = course, parts[1] = "assets", parts[2] = category, parts[3+] = file
-      const category = parts[2] ?? 'uncategorized';
-      if (!assetsByCategory.has(category)) assetsByCategory.set(category, []);
-      assetsByCategory.get(category)!.push(asset);
-    }
-
-    return {
-      params: { course: slug },
-      props: {
-        folderName,
-        displayName: folderToTitle(folderName),
-        provider: meta?.provider ?? folderToTitle(folderName),
-        sourceUrl: meta?.sourceUrl,
-        noteCount: countNotes(allNotes, folderName),
-        notes: noteModels,
-        assetsByCategory: Object.fromEntries(assetsByCategory),
-      },
-    };
-  });
+  const courses = await getCourses();
+  return courses.map((course) => ({ params: { course: course.slug }, props: { course } }));
 };
 
-const {
-  folderName,
-  displayName,
-  provider,
-  sourceUrl,
-  noteCount,
-  notes,
-  assetsByCategory,
-} = Astro.props;
-
-const courseSlug = Astro.params.course;
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const hasAssets = Object.keys(assetsByCategory).length > 0;
+const { course } = Astro.props as { course: Course };
+const first = course.sections[0];
 ---
 
-<BaseLayout
-  title={displayName}
-  description={`Notes and assets for the ${displayName} course.`}
->
-  <div class="container page-content">
-    <Breadcrumb
-      courseSlug={courseSlug}
-      courseName={displayName}
-    />
+<BaseLayout title={course.title} description={course.description}>
+  <section class="hero" style={`--brand:${course.provider.color}`} data-progress={course.sections.map((s) => s.id).join('|')}>
+    <div class="container hero-inner">
+      <a href={href('courses/')} class="back"><Icon name="arrowLeft" size={14} /> All courses</a>
+      <div class="hero-main">
+        <ProviderLogo provider={course.provider} size={64} />
+        <div>
+          <p class="eyebrow">{course.provider.name} · Current course</p>
+          <h1>{course.title}</h1>
+        </div>
+      </div>
+      {course.description && <p class="desc">{course.description}</p>}
 
-    <header class="course-header">
-      <h1 class="course-title">{displayName}</h1>
-      <p class="course-meta text-muted">
-        <span>{provider}</span>
-        <span class="meta-sep" aria-hidden="true">·</span>
-        <span>{noteCount} {noteCount === 1 ? 'note' : 'notes'}</span>
-      </p>
-      {sourceUrl && (
-        <p class="course-source-link">
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`View ${displayName} source course (opens in new tab)`}
-            class="btn btn-secondary"
-          >
-            View source course
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="11"
-              height="11"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
-          </a>
-        </p>
-      )}
-    </header>
+      <ul class="stats">
+        <li><strong>{course.notes.length}</strong> {course.notes.length === 1 ? 'note' : 'notes'}</li>
+        <li><strong>{course.sections.length}</strong> chapters</li>
+        <li><strong>{formatMinutes(course.totalMinutes)}</strong> reading</li>
+        {course.assetCount > 0 && <li><strong>{course.assetCount}</strong> assets</li>}
+      </ul>
 
-    <!-- ================================================================
-         NOTES LIST
-         ================================================================ -->
-    <section class="notes-section" aria-labelledby="notes-heading">
-      <h2 class="section-heading" id="notes-heading">Notes</h2>
-      {notes.length > 0 ? (
-        <ol class="notes-list">
-          {notes.map((note) => (
-            <li class="notes-item">
-              <a
-                href={`${base}/courses/${courseSlug}/${note.slug}`}
-                class="notes-link"
-              >
-                {note.displayTitle}
-              </a>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p class="empty-state text-muted">No notes found in this course.</p>
-      )}
-    </section>
+      <div class="progress-row">
+        <div class="progress"><span></span></div>
+        <span data-progress-label>Not started</span>
+      </div>
 
-    <!-- ================================================================
-         ASSETS SECTION — only rendered when assets exist (Req 8.1, 8.2, 8.5)
-         ================================================================ -->
-    {hasAssets && (
-      <section class="assets-section" aria-labelledby="assets-heading">
-        <h2 class="section-heading" id="assets-heading">Assets</h2>
-        {Object.entries(assetsByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryAssets]) => (
-          <div class="asset-category">
-            <h3 class="asset-category__title">{folderToTitle(category)}</h3>
-            <ul class="asset-list" role="list">
-              {categoryAssets.map((asset) => {
-                // Asset display title: frontmatter title || filename title-case
-                const assetFilename = asset.id.split('/').pop() ?? asset.id;
-                const assetTitle = asset.data.title ?? folderToTitle(assetFilename);
-                return (
-                  <li class="asset-item">
-                    <div class="asset-card card">
-                      <h4 class="asset-card__title">{assetTitle}</h4>
-                      {asset.data.description && (
-                        <p class="asset-card__desc text-muted">{asset.data.description}</p>
-                      )}
-                      <!-- Asset content rendered with syntax highlighting (Req 8.3) -->
-                      <!-- The body contains raw Markdown/YAML which we display verbatim -->
-                      <pre class="asset-card__body"><code>{asset.body}</code></pre>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+      <div class="cta">
+        {
+          first && (
+            <a class="btn btn-primary" href={first.url} data-continue={course.slug}>
+              <span data-continue-label>Start reading</span> <Icon name="arrowRight" size={16} />
+            </a>
+          )
+        }
+        {
+          course.sourceUrl && (
+            <a class="btn" href={course.sourceUrl} target="_blank" rel="noopener noreferrer">
+              Open course on {course.provider.name} <Icon name="external" size={14} />
+            </a>
+          )
+        }
+        {
+          course.assetCount > 0 && (
+            <a class="btn btn-ghost" href="#assets">
+              <Icon name="bot" size={16} /> Assets
+            </a>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <div class="container body">
+    {
+      course.notes.map((note) => (
+        <section class="note">
+          <div class="section-title">
+            <h2>{note.title}</h2>
+            {course.notes.length > 1 && <a href={note.url}>Note overview →</a>}
           </div>
-        ))}
-      </section>
-    )}
+          <ChapterList sections={note.sections} />
+        </section>
+      ))
+    }
+
+    {course.assetCount > 0 && <AssetList course={course} />}
   </div>
 </BaseLayout>
 
 <style>
-  .page-content {
-    padding-block: 2rem;
+  .hero {
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    background:
+      radial-gradient(60% 120% at 0% 0%, color-mix(in srgb, var(--brand) 14%, transparent), transparent 65%),
+      radial-gradient(50% 100% at 100% 0%, var(--glow-1), transparent 70%);
   }
 
-  /* =====================================================================
-     COURSE HEADER
-     ===================================================================== */
-  .course-header {
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--color-border);
+  .hero-inner {
+    max-width: 960px;
+    padding-block: 1.75rem 2.25rem;
   }
 
-  .course-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--color-text);
-    margin: 0 0 0.5rem;
-  }
-
-  .course-meta {
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0 0 0.75rem;
-  }
-
-  .meta-sep {
-    color: var(--color-border);
-  }
-
-  .course-source-link {
-    margin: 0;
-  }
-
-  .course-source-link .btn {
+  .back {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    font-size: 0.875rem;
+    font-size: 0.84rem;
+    color: var(--text-muted);
   }
 
-  /* =====================================================================
-     NOTES LIST
-     ===================================================================== */
-  .notes-section {
-    margin-bottom: 2.5rem;
-  }
-
-  .section-heading {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin: 0 0 1rem;
-  }
-
-  .notes-list {
-    list-style: decimal;
-    padding-left: 1.5rem;
-    margin: 0;
+  .hero-main {
     display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
+    align-items: center;
+    gap: 1.1rem;
+    margin-top: 1.5rem;
   }
 
-  .notes-item {
-    font-size: 0.9375rem;
-    line-height: 1.5;
+  .eyebrow {
+    margin: 0 0 0.3rem;
   }
 
-  .notes-link {
-    color: var(--color-accent);
-    text-decoration: none;
+  h1 {
+    margin: 0;
+    font-size: clamp(1.9rem, 1.3rem + 2vw, 2.75rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
   }
 
-  .notes-link:hover,
-  .notes-link:focus-visible {
-    text-decoration: underline;
-    outline-offset: 2px;
+  .desc {
+    max-width: 62ch;
+    margin: 1.1rem 0 0;
+    font-size: 1.02rem;
+    color: var(--text-muted);
   }
 
-  .empty-state {
-    font-style: italic;
-  }
-
-  /* =====================================================================
-     ASSETS SECTION
-     ===================================================================== */
-  .assets-section {
-    margin-bottom: 2rem;
-  }
-
-  .asset-category {
-    margin-bottom: 1.75rem;
-  }
-
-  .asset-category__title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-transform: capitalize;
-    margin: 0 0 0.75rem;
-    padding-bottom: 0.35rem;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .asset-list {
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
     list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .asset-card {
-    padding: 1rem 1.25rem;
-  }
-
-  .asset-card__title {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin: 0 0 0.35rem;
-  }
-
-  .asset-card__desc {
     font-size: 0.875rem;
-    margin: 0 0 0.75rem;
-    line-height: 1.55;
+    color: var(--text-muted);
   }
 
-  /* Asset body — verbatim content block (Req 8.3)
-     Shown in a scrollable pre block with syntax highlighting from Shiki applied
-     at the page level; here we just ensure it doesn't overflow. */
-  .asset-card__body {
-    margin: 0;
-    padding: 0.75rem 1rem;
-    background-color: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
-    font-family: var(--font-code);
-    font-size: 0.8125rem;
-    line-height: 1.6;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
+  .stats strong {
+    color: var(--text);
+    font-weight: 650;
   }
 
-  .asset-card__body code {
-    font-family: inherit;
-    background: none;
-    padding: 0;
-    border: none;
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 460px;
+    margin-top: 1.25rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .progress-row .progress {
+    flex: 1;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .body {
+    max-width: 960px;
+    padding-top: 2.5rem;
+  }
+
+  .note + .note {
+    margin-top: 2.75rem;
   }
 </style>

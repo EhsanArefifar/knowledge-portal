@@ -1,0 +1,144 @@
+---
+/** Numbered chapter list with completion state, used on course and note pages. */
+import Icon from './Icon.astro';
+import type { Section } from '../lib/content';
+
+interface Props {
+  sections: Section[];
+}
+
+const { sections } = Astro.props;
+---
+
+<ol class="chapters">
+  {
+    sections.map((s) => (
+      <li data-section-id={s.id}>
+        <a href={s.url}>
+          <span class="num" aria-hidden="true">
+            <span class="n">{String(s.number).padStart(2, '0')}</span>
+            <Icon name="check" size={16} class="tick" />
+          </span>
+          <span class="body">
+            {s.eyebrow && <span class="eyebrow">{s.eyebrow}</span>}
+            <span class="name">{s.shortTitle}</span>
+            {s.subheadings.length > 0 && (
+              <span class="subs">
+                {s.subheadings
+                  .slice(0, 4)
+                  .map((h) => h.text)
+                  .join(' · ')}
+                {s.subheadings.length > 4 && ` · +${s.subheadings.length - 4} more`}
+              </span>
+            )}
+          </span>
+          <span class="time">{s.minutes} min</span>
+          <Icon name="chevronRight" size={18} class="chev" />
+        </a>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .chapters {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.95rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color var(--t-fast), background-color var(--t-fast), transform var(--t-fast);
+  }
+
+  a:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    color: var(--text);
+    transform: translateX(2px);
+  }
+
+  .num {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .num :global(.tick) {
+    display: none;
+  }
+
+  li[data-done] .num {
+    background: var(--success-soft);
+    color: var(--success);
+  }
+
+  li[data-done] .n {
+    display: none;
+  }
+
+  li[data-done] .num :global(.tick) {
+    display: block;
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .eyebrow {
+    font-size: 0.68rem;
+  }
+
+  .name {
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .subs {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .time {
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  a :global(.chev) {
+    flex-shrink: 0;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 560px) {
+    .time {
+      display: none;
+    }
+  }
+</style>

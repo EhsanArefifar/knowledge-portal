@@ -1,93 +1,101 @@
 /* =============================================================================
-   tokens.css — Design Tokens (CSS Custom Properties)
-   Personal AI Learning Portal
-   Requirements: 13.4, 15.5, 16.3, 19.1–19.5
+   Design tokens. Colors are redefined per theme; everything else is shared.
+   The theme is set on <html data-theme> by the inline script in BaseLayout.
    ============================================================================= */
 
-/* -----------------------------------------------------------------------------
-   Root defaults — dark theme as the system default
-   All tokens are defined here; light/dark selectors override color tokens only.
-   ----------------------------------------------------------------------------- */
 :root {
-  /* --- Typography --- */
-  /* Req 16.3, 19.1: System font stacks only — no external web font imports */
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
-  --font-code: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier,
-    monospace;
+  --font-ui: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-code: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* --- Border Radius --- */
-  /* Req 19.4: Medium border-radius (6–10px) on cards and buttons */
-  --radius-card: 8px;
-  --radius-btn:  6px;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
 
-  /* --- Transitions --- */
-  /* Req 13.4: Disabled entirely under prefers-reduced-motion (see global.css) */
-  --transition-base: 150ms ease;
+  --header-h: 60px;
+  --reader-size: 1.0625rem;
+  --reader-measure: 72ch;
 
-  /* --- Default theme: dark --- */
-  /* These values are also set explicitly on [data-theme="dark"] below */
-  --color-bg:         #0f1117;
-  --color-surface:    #1a1d27;
-  --color-text:       #e2e8f0;
-  --color-text-muted: #94a3b8;
-  /* Req 19.2: Single restrained accent color — blue, developer-appropriate */
-  --color-accent:       #60a5fa;
-  --color-accent-hover: #93c5fd;
-  /* Req 19.3: Subtle borders and low-elevation shadows */
-  --color-border: #2d3148;
-  --color-shadow: rgba(0, 0, 0, 0.4);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-fast: 120ms var(--ease);
+  --t: 200ms var(--ease);
+
+  color-scheme: light;
+  --bg: #f7f6f3;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f1f0ec;
+  --surface-hover: #ecebe6;
+  --text: #1b1c20;
+  --text-prose: #2c2e34;
+  --text-muted: #686c75;
+  --text-faint: #8f939b;
+  --border: #e5e3dd;
+  --border-strong: #d4d2ca;
+  --accent: #5046e5;
+  --accent-hover: #3f35cf;
+  --accent-soft: rgba(80, 70, 229, 0.09);
+  --accent-contrast: #ffffff;
+  --success: #188a4b;
+  --success-soft: rgba(24, 138, 75, 0.1);
+  --warning: #b45309;
+  --warning-soft: rgba(180, 83, 9, 0.09);
+  --code-bg: #f3f2ee;
+  --code-inline-bg: rgba(27, 28, 32, 0.06);
+  --shadow-sm: 0 1px 2px rgba(20, 20, 30, 0.05);
+  --shadow: 0 1px 2px rgba(20, 20, 30, 0.04), 0 6px 20px -6px rgba(20, 20, 30, 0.1);
+  --shadow-lg: 0 24px 60px -12px rgba(20, 20, 30, 0.28);
+  --backdrop: rgba(20, 20, 28, 0.42);
+  --glow-1: rgba(99, 91, 255, 0.16);
+  --glow-2: rgba(217, 119, 87, 0.14);
 }
 
-/* -----------------------------------------------------------------------------
-   Light theme
-   Contrast ratios (WCAG 2.1 AA — Req 15.5):
-     --color-text (#1e293b) on --color-bg (#f8fafc):    ≈ 14.5:1  ✓
-     --color-text-muted (#64748b) on --color-bg:         ≈  4.6:1  ✓
-     --color-accent (#2563eb) on --color-bg:             ≈  5.9:1  ✓ (large text 3:1)
-   ----------------------------------------------------------------------------- */
-[data-theme="light"] {
-  --color-bg:         #f8fafc;
-  --color-surface:    #ffffff;
-  --color-text:       #1e293b;
-  --color-text-muted: #64748b;
-  --color-accent:       #2563eb;
-  --color-accent-hover: #1d4ed8;
-  --color-border: #e2e8f0;
-  --color-shadow: rgba(0, 0, 0, 0.08);
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0e1013;
+  --bg-elevated: #15171c;
+  --surface: #15171c;
+  --surface-2: #1b1e24;
+  --surface-hover: #22252d;
+  --text: #ebecef;
+  --text-prose: #c9ccd3;
+  --text-muted: #8d929c;
+  --text-faint: #6a6f79;
+  --border: #252830;
+  --border-strong: #323641;
+  --accent: #8f88ff;
+  --accent-hover: #aaa5ff;
+  --accent-soft: rgba(143, 136, 255, 0.13);
+  --accent-contrast: #0e1013;
+  --success: #3ccf86;
+  --success-soft: rgba(60, 207, 134, 0.12);
+  --warning: #f0a35b;
+  --warning-soft: rgba(240, 163, 91, 0.1);
+  --code-bg: #121419;
+  --code-inline-bg: rgba(255, 255, 255, 0.07);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 70px -10px rgba(0, 0, 0, 0.7);
+  --backdrop: rgba(4, 5, 8, 0.6);
+  --glow-1: rgba(120, 110, 255, 0.14);
+  --glow-2: rgba(217, 119, 87, 0.09);
 }
 
-/* -----------------------------------------------------------------------------
-   Dark theme (explicit — mirrors :root defaults)
-   Contrast ratios (WCAG 2.1 AA — Req 15.5):
-     --color-text (#e2e8f0) on --color-bg (#0f1117):    ≈ 14.0:1  ✓
-     --color-text-muted (#94a3b8) on --color-bg:         ≈  5.5:1  ✓
-     --color-accent (#60a5fa) on --color-bg:             ≈  5.3:1  ✓
-   ----------------------------------------------------------------------------- */
-[data-theme="dark"] {
-  --color-bg:         #0f1117;
-  --color-surface:    #1a1d27;
-  --color-text:       #e2e8f0;
-  --color-text-muted: #94a3b8;
-  --color-accent:       #60a5fa;
-  --color-accent-hover: #93c5fd;
-  --color-border: #2d3148;
-  --color-shadow: rgba(0, 0, 0, 0.4);
-}
-
-/* -----------------------------------------------------------------------------
-   OS-level dark preference fallback (no JS / before theme script runs)
-   Prevents FOUC when JavaScript is disabled.
-   ----------------------------------------------------------------------------- */
-@media (prefers-color-scheme: light) {
+/* No-JS fallback: follow the OS until the theme script sets data-theme. */
+@media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --color-bg:         #f8fafc;
-    --color-surface:    #ffffff;
-    --color-text:       #1e293b;
-    --color-text-muted: #64748b;
-    --color-accent:       #2563eb;
-    --color-accent-hover: #1d4ed8;
-    --color-border: #e2e8f0;
-    --color-shadow: rgba(0, 0, 0, 0.08);
+    color-scheme: dark;
+    --bg: #0e1013;
+    --surface: #15171c;
+    --surface-2: #1b1e24;
+    --text: #ebecef;
+    --text-prose: #c9ccd3;
+    --text-muted: #8d929c;
+    --border: #252830;
+    --accent: #8f88ff;
+    --code-bg: #121419;
   }
 }
+
+:root[data-text-size='s'] { --reader-size: 0.9875rem; }
+:root[data-text-size='l'] { --reader-size: 1.1875rem; }

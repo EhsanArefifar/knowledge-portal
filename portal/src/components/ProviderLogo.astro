@@ -1,0 +1,59 @@
+---
+/** Provider logo in a rounded tile; falls back to the provider's initials. */
+import type { Provider } from '../data/providers';
+import { href } from '../lib/content';
+
+interface Props {
+  provider: Provider;
+  size?: number;
+}
+
+const { provider, size = 40 } = Astro.props;
+const initials = provider.name
+  .split(/\s+/)
+  .map((w) => w[0])
+  .join('')
+  .slice(0, 2)
+  .toUpperCase();
+---
+
+<span class="logo" style={`--size:${size}px;--brand:${provider.color}`} title={provider.name}>
+  {
+    provider.logo ? (
+      <img src={href(provider.logo)} alt={`${provider.name} logo`} width={size} height={size} loading="lazy" decoding="async" />
+    ) : (
+      <span class="initials" aria-label={provider.name}>{initials}</span>
+    )
+  }
+</span>
+
+<style>
+  .logo {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: var(--size);
+    height: var(--size);
+    border-radius: calc(var(--size) * 0.28);
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 0 0 1px var(--border), var(--shadow-sm);
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .initials {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: var(--brand);
+    color: #fff;
+    font-weight: 700;
+    font-size: calc(var(--size) * 0.38);
+  }
+</style>

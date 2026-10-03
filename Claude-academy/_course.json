@@ -1,4 +1,15 @@
 {
   "provider": "Anthropic",
-  "sourceUrl": "https://anthropic.skilljar.com/claude-101"
+  "courses": {
+    "anthropic_claude_101.md": {
+      "title": "Claude 101",
+      "sourceUrl": "https://anthropic.skilljar.com/claude-101",
+      "description": "Claude's core capabilities and ways of working — desktop modes, Projects, Artifacts, Skills, Connectors and Research."
+    },
+    "anthropic_claude_code_in_action.md": {
+      "title": "Claude Code in Action",
+      "sourceUrl": "https://anthropic.skilljar.com/claude-code-in-action",
+      "description": "Steering long sessions, CLAUDE.md, verification, permissions, hooks, headless runs, GitHub Actions and plugins."
+    }
+  }
 }

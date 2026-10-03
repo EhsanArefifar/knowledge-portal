@@ -1,5 +1,3 @@
-import type { CollectionEntry } from 'astro:content';
-
 /**
  * Converts a folder/file name to a URL-safe slug.
  * Lowercases, replaces hyphens/underscores/spaces with `-`,
@@ -35,24 +33,4 @@ export function extractTitle(content: string, filename: string): string {
   // Strip file extension for the fallback
   const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
   return folderToTitle(nameWithoutExt);
-}
-
-/**
- * Counts entries whose `id` matches the pattern `<course>/<filename>.md`
- * with NO extra path segments (i.e., root-level only, not inside subdirectories).
- *
- * Entry IDs from the glob loader look like: "Course-folder/note-file"
- * (no .md extension in the id, and no extra slashes for root-level files).
- */
-export function countNotes(entries: CollectionEntry<'notes'>[], course: string): number {
-  // Root-level entries have the shape: "<course>/<filename>" with exactly one slash
-  return entries.filter((entry) => {
-    const id = entry.id;
-    // Must start with the course folder name followed by exactly one slash,
-    // and have no further slashes after that.
-    const prefix = `${course}/`;
-    if (!id.startsWith(prefix)) return false;
-    const remainder = id.slice(prefix.length);
-    return !remainder.includes('/');
-  }).length;
 }

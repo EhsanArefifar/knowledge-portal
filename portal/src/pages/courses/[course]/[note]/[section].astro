@@ -1,0 +1,19 @@
+---
+import type { GetStaticPaths } from 'astro';
+import ReaderLayout from '../../../../layouts/ReaderLayout.astro';
+import { getCourses, type Course, type Section } from '../../../../lib/content';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const courses = await getCourses();
+  return courses.flatMap((course) =>
+    course.sections.map((section) => ({
+      params: { course: course.slug, note: section.noteSlug, section: section.slug },
+      props: { course, section },
+    })),
+  );
+};
+
+const { course, section } = Astro.props as { course: Course; section: Section };
+---
+
+<ReaderLayout course={course} section={section} />

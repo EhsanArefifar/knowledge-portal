@@ -1,34 +1,32 @@
 ---
 /**
- * BaseLayout.astro — Global HTML shell for every page
- *
- * Requirements: 3.4, 13.1, 13.2, 15.1, 15.2, 16.1
- *
- * - Semantic HTML structure: <html>, <head>, <header>, <main>, <footer>
- * - Synchronous theme-init <script> in <head> to prevent FOUC (Req 13.1, 13.2)
- * - Skip-to-content link as first focusable element (Req 15.2)
- * - ThemeToggle and SearchDialog integrated in the site header
- * - Accepts `title` (required) and `description` (optional) props
- * - global.css imported for base styles and design tokens
+ * BaseLayout — HTML shell for every page: theme bootstrapping, header with
+ * navigation + search + theme toggle, footer, and shared client scripts.
  */
-
-import ThemeToggle from '../components/ThemeToggle.astro';
-import SearchDialog from '../components/SearchDialog.astro';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
 import '../styles/tokens.css';
 import '../styles/global.css';
+import Icon from '../components/Icon.astro';
+import SearchDialog from '../components/SearchDialog.astro';
+import { base, href } from '../lib/content';
 
 interface Props {
-  /** Page title — used in <title> and as the visible <h1> complement. */
   title: string;
-  /** Optional meta description for SEO and social cards. */
   description?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description = 'Personal AI learning portal — course notes, chapters and reusable Claude Code assets.' } =
+  Astro.props;
 
-// Base path is configured in astro.config.mjs; import.meta.env.BASE_URL
-// resolves to "/knowledge-portal/" in production.
-const base = import.meta.env.BASE_URL;
+const path = Astro.url.pathname.replace(base, '') || '/';
+const nav = [
+  { label: 'Courses', path: '/courses/' },
+  { label: 'Up next', path: '/next-courses/' },
+  { label: 'Resources', path: '/resources/' },
+];
+const isActive = (p: string) => path.startsWith(p);
+const fullTitle = title === 'Home' ? 'Learning Portal' : `${title} · Learning Portal`;
 ---
 
 <!doctype html>
@@ -37,256 +35,318 @@ const base = import.meta.env.BASE_URL;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-
-    <title>{title} — Personal AI Learning Portal</title>
-
-    {description && <meta name="description" content={description} />}
-
-    <!--
-      Synchronous theme-initialization script (Req 13.1, 13.2, 16.1)
-      Placed in <head> BEFORE any CSS paint to avoid Flash of Unstyled Content.
-      Reads localStorage; falls back to OS prefers-color-scheme.
-      Handles SecurityError thrown in private-browsing mode.
-    -->
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
+    <meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e1013" media="(prefers-color-scheme: dark)" />
     <script is:inline>
       (function () {
-        var validThemes = ['light', 'dark'];
-        var stored;
-        try {
-          stored = localStorage.getItem('theme');
-        } catch (e) {
-          // SecurityError in private browsing — stored remains undefined
+        var d = document.documentElement;
+        function get(k) {
+          try {
+            return localStorage.getItem(k);
+          } catch (e) {
+            return null;
+          }
         }
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var theme = validThemes.includes(stored) ? stored : (prefersDark ? 'dark' : 'light');
-        document.documentElement.dataset.theme = theme;
+        var theme = get('theme');
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        d.dataset.theme = theme;
+        var size = get('kp:text-size');
+        if (size === 's' || size === 'l') d.dataset.textSize = size;
+        if (get('kp:focus') === '1') d.dataset.focus = '';
       })();
     </script>
-
-    <!-- Favicon placeholder — replace with real asset when available -->
-    <link rel="icon" type="image/svg+xml" href={`${base.replace(/\/$/, "")}/favicon.svg`} />
+    <slot name="head" />
   </head>
 
   <body>
-    <!--
-      Skip-to-content link (Req 15.2)
-      Must be the FIRST focusable element in <body> — appears on keyboard focus,
-      visually hidden otherwise (see .skip-to-content in global.css).
-    -->
-    <a href="#main-content" class="skip-to-content">Skip to content</a>
+    <a href="#main" class="skip-link">Skip to content</a>
 
-    <!--
-      Site header (Req 15.1: semantic <header>)
-      Contains site title link, SearchDialog trigger, and ThemeToggle.
-    -->
-    <header class="site-header" role="banner">
-      <div class="container">
-        <nav class="site-nav" aria-label="Site navigation">
-          <a href={base || '/'} class="site-logo" aria-label="Personal AI Learning Portal — Home">
-            <span aria-hidden="true">🧠</span>
-            <span class="site-logo-text">AI Learning Portal</span>
-          </a>
+    <header class="header">
+      <div class="header-inner">
+        <a href={href('/')} class="brand" aria-label="Learning Portal — home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="28" height="28">
+              <defs>
+                <linearGradient id="bm" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#6d5efc" />
+                  <stop offset="1" stop-color="#d97757" />
+                </linearGradient>
+              </defs>
+              <rect width="32" height="32" rx="8" fill="url(#bm)" />
+              <path d="M8 10.5c2.6-1.3 5.3-1.3 8 0v12c-2.7-1.3-5.4-1.3-8 0v-12Zm8 0c2.6-1.3 5.3-1.3 8 0v12c-2.7-1.3-5.4-1.3-8 0" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span class="brand-text">Learning Portal</span>
+        </a>
 
-          <div class="site-nav-links">
-            <a href={`${base}/courses`} class="nav-link">Courses</a>
-            <a href={`${base}/quick-access`} class="nav-link">Quick Access</a>
-            <a href={`${base}/resources`} class="nav-link">Resources</a>
-          </div>
+        <nav class="nav" aria-label="Main">
+          {
+            nav.map((item) => (
+              <a href={href(item.path)} class="nav-link" aria-current={isActive(item.path) ? 'page' : undefined}>
+                {item.label}
+              </a>
+            ))
+          }
         </nav>
 
-        <div class="site-header-actions">
-          <!--
-            Search trigger (Req 9.2): Ctrl+K / Cmd+K opens the dialog.
-            The <button> here provides an additional clickable entry point.
-          -->
-          <button
-            class="btn search-trigger"
-            type="button"
-            aria-label="Open search (Ctrl+K)"
-            aria-keyshortcuts="Control+K Meta+K"
-            onclick="document.getElementById('search-dialog')?.showModal()"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <span class="search-trigger-label">Search</span>
-            <kbd class="search-trigger-kbd" aria-hidden="true">⌘K</kbd>
+        <div class="actions">
+          <button type="button" class="search-btn" data-search-open aria-label="Search (Ctrl+K)" aria-keyshortcuts="Control+K Meta+K">
+            <Icon name="search" size={16} />
+            <span class="search-btn-label">Search</span>
+            <kbd class="search-btn-kbd">Ctrl K</kbd>
           </button>
-
-          <ThemeToggle />
+          <button type="button" class="btn btn-ghost btn-icon" id="theme-toggle" aria-label="Toggle dark mode">
+            <Icon name="sun" class="i-sun" />
+            <Icon name="moon" class="i-moon" />
+          </button>
+          <details class="mobile-menu">
+            <summary class="btn btn-ghost btn-icon" aria-label="Open menu">
+              <Icon name="menu" />
+            </summary>
+            <nav class="mobile-nav card" aria-label="Main (mobile)">
+              <a href={href('/')}>Home</a>
+              {nav.map((item) => <a href={href(item.path)} aria-current={isActive(item.path) ? 'page' : undefined}>{item.label}</a>)}
+            </nav>
+          </details>
         </div>
       </div>
     </header>
 
-    <!-- SearchDialog — keyboard shortcut and button above open this (Req 9.1–9.6) -->
     <SearchDialog />
 
-    <!--
-      Main content area (Req 15.1: semantic <main>)
-      id="main-content" is the skip-to-content anchor target.
-    -->
-    <main id="main-content">
+    <main id="main">
       <slot />
     </main>
 
-    <!--
-      Site footer (Req 15.1: semantic <footer>)
-    -->
-    <footer class="site-footer" role="contentinfo">
-      <div class="container">
-        <p class="text-muted">
-          Personal AI Learning Portal — built with
-          <a href="https://astro.build" target="_blank" rel="noopener noreferrer">Astro</a>.
-        </p>
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span>Learning Portal · notes rendered from Markdown</span>
+        <span class="footer-keys"><kbd>/</kbd> search · <kbd>←</kbd><kbd>→</kbd> previous / next chapter</span>
       </div>
     </footer>
+
+    <script>
+      import { addCopyButtons, enhanceDiagrams, refreshProgressUI } from '../scripts/progress';
+
+      refreshProgressUI();
+      addCopyButtons();
+      enhanceDiagrams();
+
+      const root = document.documentElement;
+      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = next;
+        try {
+          localStorage.setItem('theme', next);
+        } catch {
+          /* ignore */
+        }
+      });
+
+      // Close the mobile menu after navigating or clicking outside.
+      const menu = document.querySelector<HTMLDetailsElement>('.mobile-menu');
+      document.addEventListener('click', (e) => {
+        if (menu?.open && !menu.contains(e.target as Node)) menu.open = false;
+      });
+    </script>
   </body>
 </html>
 
 <style>
-  /* -------------------------------------------------------------------------
-     Site Header
-     Req 15.1: semantic landmark, Req 14.4: usable at 320px+
-     ------------------------------------------------------------------------- */
-  .site-header {
+  .header {
     position: sticky;
     top: 0;
-    z-index: 100;
-    background-color: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
-    box-shadow: 0 1px 3px var(--color-shadow);
+    z-index: 50;
+    height: var(--header-h);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(1.6) blur(14px);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    border-bottom: 1px solid var(--border);
   }
 
-  .site-header .container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-block: 0.75rem;
-  }
-
-  /* Site logo / wordmark */
-  .site-logo {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--color-text);
-    text-decoration: none;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .site-logo:hover,
-  .site-logo:focus-visible {
-    color: var(--color-accent);
-  }
-
-  /* Primary nav links */
-  .site-nav {
+  .header-inner {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    flex: 1;
-    min-width: 0;
+    height: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 1.75rem);
   }
 
-  .site-nav-links {
-    display: flex;
+  .brand {
+    display: inline-flex;
     align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .nav-link {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--color-text-muted);
-    text-decoration: none;
-    transition: color var(--transition-base);
-    white-space: nowrap;
-  }
-
-  .nav-link:hover,
-  .nav-link:focus-visible {
-    color: var(--color-accent);
-  }
-
-  /* Header action buttons (search + theme toggle) */
-  .site-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
+    color: var(--text);
+    font-weight: 700;
+    letter-spacing: -0.02em;
     flex-shrink: 0;
   }
 
-  /* Search trigger button */
-  .search-trigger {
+  .brand:hover {
+    color: var(--text);
+  }
+
+  .brand-mark {
+    display: inline-flex;
+    filter: drop-shadow(0 2px 6px rgba(109, 94, 252, 0.35));
+  }
+
+  .nav {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 550;
+    transition: color var(--t-fast), background-color var(--t-fast);
+  }
+
+  .nav-link:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+  }
+
+  .nav-link[aria-current='page'] {
+    color: var(--text);
+    background: var(--surface-2);
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+  }
+
+  .search-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-  }
-
-  .search-trigger-label {
+    gap: 0.55rem;
+    height: 2.25rem;
+    width: 15rem;
+    padding: 0 0.5rem 0 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text-muted);
     font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
   }
 
-  .search-trigger-kbd {
-    display: inline-block;
-    padding: 0.1em 0.4em;
-    font-family: var(--font-code);
-    font-size: 0.75em;
-    color: var(--color-text-muted);
-    background-color: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    line-height: 1.5;
+  .search-btn:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
   }
 
-  /* -------------------------------------------------------------------------
-     Site footer
-     Req 15.1: semantic <footer> landmark
-     ------------------------------------------------------------------------- */
-  .site-footer {
-    margin-top: auto;
-    border-top: 1px solid var(--color-border);
-    padding-block: 1.25rem;
-    font-size: 0.875rem;
+  .search-btn-kbd {
+    margin-left: auto;
   }
 
-  /* -------------------------------------------------------------------------
-     Responsive adjustments
-     Req 14.4: fully usable from 320px upward
-     ------------------------------------------------------------------------- */
-  @media (max-width: 639px) {
-    .site-nav-links {
-      display: none; /* Hidden on mobile — accessible via DrawerNav in future task */
+  #theme-toggle :global(.i-moon) {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) #theme-toggle :global(.i-moon) {
+    display: block;
+  }
+
+  :global(:root[data-theme='dark']) #theme-toggle :global(.i-sun) {
+    display: none;
+  }
+
+  .mobile-menu {
+    display: none;
+    position: relative;
+  }
+
+  .mobile-menu summary {
+    list-style: none;
+  }
+
+  .mobile-menu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-nav {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    display: flex;
+    flex-direction: column;
+    min-width: 12rem;
+    padding: 0.4rem;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .mobile-nav a {
+    padding: 0.65rem 0.8rem;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-weight: 550;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a[aria-current='page'] {
+    background: var(--surface-2);
+  }
+
+  .footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    padding-block: 1.5rem;
+  }
+
+  :global(:root[data-focus]) .footer {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .search-btn {
+      width: auto;
     }
-
-    .search-trigger-label,
-    .search-trigger-kbd {
-      display: none; /* Icon-only on mobile to save space */
+    .search-btn-kbd {
+      display: none;
     }
+  }
 
-    .site-logo-text {
-      /* Truncate long wordmark on very small screens */
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 12ch;
+  @media (max-width: 720px) {
+    .nav {
+      display: none;
+    }
+    .mobile-menu {
+      display: block;
+    }
+    .search-btn {
+      width: 2.25rem;
+      padding: 0;
+      justify-content: center;
+    }
+    .search-btn-label {
+      display: none;
+    }
+    .footer-keys {
+      display: none;
     }
   }
 </style>

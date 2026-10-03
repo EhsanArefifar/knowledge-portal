@@ -6,25 +6,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This repo is a collection of Markdown course notes plus an Astro site (`portal/`) that renders them. The notes are the source of truth; the portal is a pure rendering layer and must not modify or generate note content.
 
-- `Claude-academy/`, `NetNinja-masterclass/` — one folder per course. Each has a `_course.json` (`provider`, `sourceUrl`) and root-level `*.md` notes. `NetNinja-masterclass/assets/{agents,commands,skills}/` holds reusable Claude Code assets (also Markdown).
+- `Claude-academy/`, `NetNinja-masterclass/` — one folder per course. Each has a `_course.json` (`title`, `provider`, `sourceUrl`, `description`, all optional) and root-level `*.md` notes. A folder is one course by default; a `courses` map in `_course.json` (note filename → course fields) splits it into one course per note, which is how `Claude-academy/` holds two separate Anthropic courses. Assets go to the folder course, or to the first course when the folder is split. `<course>/assets/{agents,commands,skills}/` holds reusable Claude Code assets (also Markdown).
 - `portal/` — the Astro 5 static site. All npm commands run from here.
-- `.kiro/specs/personal-ai-learning-portal/` — requirements, design, and task list for the portal (design.md has the architecture diagram; the validator cites requirement numbers from requirements.md).
+- `.kiro/specs/personal-ai-learning-portal/` — the original requirements/design for the portal. The site has since been redesigned, so treat it as history, not as the current spec.
 
 ## Commands (run in `portal/`)
 
-- `npm run dev` — dev server
-- `npm run build` — `astro build` then `pagefind --site dist --output-path dist/_pagefind` (search index is only produced by the full build, not `dev`)
+- `npm run dev` — dev server (search only works on a built site)
+- `npm run build` — `astro build` then `pagefind --site dist --output-path dist/_pagefind`
 - `npm run preview` — serve built `dist/`
-- Tests: vitest (+ fast-check for property tests) is configured to pick up `src/**/*.{test,spec}.ts`, but there is no `test` script and no tests yet. Run with `npx vitest run` or `npx vitest run path/to/file.test.ts`. `tests/build/` is an empty placeholder.
+- Tests: `npx vitest run` (or `npx vitest run src/lib/sections.test.ts`). Vitest + fast-check, files matching `src/**/*.{test,spec}.ts`; there is no `test` npm script.
 
 ## Architecture
 
-- **Content comes from outside `src/`.** `portal/src/content/config.ts` defines two collections via the `glob()` loader with `base: '../'` (repo root): `notes` (`*/*.md`, root-level notes per course) and `assets` (`*/assets/**/*.md`), both excluding `portal/**` and `.kiro/**`. Adding a course = adding a top-level folder with `.md` files and a `_course.json`; no portal change needed. Entry ids look like `Course-folder/note-file` (no extension).
-- **Routing/naming.** Pages in `src/pages/courses/[course]/[note].astro` etc. derive URLs and titles from folder/file names through `src/lib/naming.ts` (`toSlug`, `folderToTitle`, `extractTitle` = first `# H1`, else filename; `countNotes` counts only root-level entries).
-- **Hand-maintained pages** (`quick-access`, `next-courses`, `resources`) are driven by `src/data/*.ts`, not by the Markdown.
-- **Markdown pipeline** (`astro.config.mjs`): Shiki (`github-dark`) for code, `rehype-mermaid` with `inline-svg` strategy renders ```` ```mermaid ```` blocks to SVG at build time (needs a Playwright browser: run `npx playwright install chromium-headless-shell` once in `portal/`; the CI workflow does this too). Mermaid is excluded from Shiki (`excludeLangs`) so it reaches the rehype plugin. If a failed build leaves notes rendering empty, delete `portal/.astro` and `portal/node_modules/.astro`.
-- **Content validator** (`src/plugins/contentValidator.ts`): an Astro integration on `astro:build:done` that scans emitted HTML for broken internal `<a href>`/`<img src>` and only warns — it never fails the build. It strips the configured `base` from absolute paths.
-- Client JS is limited to theme toggle, search dialog, copy button, TOC scroll-spy, and drawer nav; everything else is zero-JS Astro.
+- **Content comes from outside `src/`.** `src/content/config.ts` defines `notes` (`*/*.md`) and `assets` (`*/assets/**/*.md`) with the `glob()` loader at `base: '../'` (repo root). Frontmatter schemas are `.passthrough()` because asset frontmatter varies (`name`, `model`, `tools`, `allowed-tools`, …).
+- **`src/lib/content.ts` is the single source of the page model.** `getCourses()` (memoized) groups entries by folder, reads `_course.json` from disk (`process.cwd()/..` — Astro must run from `portal/`), splits each note into sections, and builds asset metadata, install paths (`.claude/<kind>/<file>`) and download URLs. Pages call it instead of `getCollection` directly. `href()` prefixes the base path — use it for every internal link.
+- **Notes are split into one page per chapter** by `src/lib/sections.ts` (pure, unit-tested): it slices the note's pre-rendered `entry.rendered.html` at the shallowest heading level that occurs twice (H2, else H3). The next level down becomes the "On this page" list. An intro of 60+ words becomes its own first section, and a shorter one shows on the note overview. Routes: `courses/[course]/` (hub + assets), `courses/[course]/[note]/` (overview), `courses/[course]/[note]/[section]/` (reader, `ReaderLayout.astro`).
+- **Downloads** are static endpoints: `pages/downloads/[course]/[...file].ts` (raw asset file) and `pages/downloads/[course].zip.ts` (all assets zipped as a `.claude/` tree via `fflate`).
+- **Hand-maintained data**: `src/data/links.ts` (upcoming courses, quick access, tools) and `src/data/providers.ts` (provider → logo in `public/logos/`, brand color). A course's `provider` string is matched against `providers.ts`; an unknown provider falls back to initials.
+- **Client state** is localStorage only (`src/scripts/progress.ts`): completed sections, last visited section per course, theme, text size, focus mode. Pages expose hooks via `data-section-id`, `data-progress`, `data-continue` attributes, and `refreshProgressUI()` fills them in.
+- **Search** (`SearchDialog.astro`) uses Pagefind's JS API. Only elements with `data-pagefind-body` are indexed (reader content and the assets list), with `title`/`course` meta. `pagefind.js` is loaded through `new Function('url', 'return import(url)')` on purpose: a bundled `import()` breaks when Astro inlines the script (`__VITE_PRELOAD__ is not defined`).
+- **Markdown pipeline** (`astro.config.mjs`): Shiki dual themes with `defaultColor: false` (colors switched by `data-theme` in `global.css`). `rehype-mermaid` (`inline-svg`, neutral theme) renders diagrams at build time and needs a Playwright browser: run `npx playwright install chromium-headless-shell` once (CI does this too). Mermaid is excluded from Shiki so it reaches the plugin. Dark mode inverts diagrams with a CSS filter, and `enhanceDiagrams()` shows them at natural width in a scroll frame. If a failed build leaves notes rendering empty, delete `portal/.astro` and `portal/node_modules/.astro`.
+- **Styling**: tokens in `src/styles/tokens.css` (light/dark via `:root[data-theme]`), shared primitives and `.prose` reading styles in `global.css`, component styles scoped in `.astro` files. Fonts are self-hosted via `@fontsource-variable` (Inter, JetBrains Mono).
+- **Content validator** (`src/plugins/contentValidator.ts`): warns (never fails) on broken internal links/images in the built HTML; `<script>` bodies are skipped.
+- Nested code fences in notes need a longer outer fence (```` ```` ````), otherwise the inner fence closes the block and the rest renders as raw HTML.
 
 ## Deployment
 

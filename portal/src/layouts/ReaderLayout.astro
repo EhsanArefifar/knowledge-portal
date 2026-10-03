@@ -1,0 +1,833 @@
+---
+/**
+ * ReaderLayout — one chapter per page.
+ *
+ *  left   course chapters (grouped by note when a course has several)
+ *  center the chapter content, completion toggle and previous/next
+ *  right  "On this page" — the chapter's subtitles, with scroll-spy
+ *
+ * Below 1024px the chapter list becomes a drawer and the TOC is hidden.
+ */
+import BaseLayout from './BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import ProviderLogo from '../components/ProviderLogo.astro';
+import type { Course, Section } from '../lib/content';
+
+interface Props {
+  course: Course;
+  section: Section;
+}
+
+const { course, section } = Astro.props;
+const idx = course.sections.findIndex((s) => s.id === section.id);
+const prev = course.sections[idx - 1];
+const next = course.sections[idx + 1];
+const ids = course.sections.map((s) => s.id).join('|');
+const multiNote = course.notes.length > 1;
+---
+
+<BaseLayout title={`${section.title} — ${course.title}`} description={`${section.title} · ${section.noteTitle}`}>
+  <div class="read-progress" aria-hidden="true"><span id="read-progress"></span></div>
+
+  <div class="reader" data-reader>
+    <div class="scrim" data-drawer-close aria-hidden="true"></div>
+
+    <aside class="sidebar" id="chapters" aria-label="Course chapters">
+      <div class="sb-head" data-progress={ids}>
+        <a href={course.url} class="sb-course">
+          <ProviderLogo provider={course.provider} size={34} />
+          <span>
+            <span class="sb-provider">{course.provider.name}</span>
+            <span class="sb-title">{course.title}</span>
+          </span>
+        </a>
+        <div class="sb-progress">
+          <div class="progress"><span></span></div>
+          <span data-progress-label>Not started</span>
+        </div>
+        <button type="button" class="btn btn-ghost btn-icon sb-close" data-drawer-close aria-label="Close chapters">
+          <Icon name="close" />
+        </button>
+      </div>
+
+      <nav class="sb-nav" aria-label="Chapters">
+        {
+          course.notes.map((note) => (
+            <div class="sb-group">
+              {multiNote && (
+                <a href={note.url} class="sb-note">
+                  {note.title}
+                </a>
+              )}
+              <ol>
+                {note.sections.map((s) => (
+                  <li>
+                    <a href={s.url} data-section-id={s.id} aria-current={s.id === section.id ? 'page' : undefined}>
+                      <span class="dot" aria-hidden="true">
+                        <Icon name="check" size={12} />
+                      </span>
+                      <span class="sb-label">
+                        {s.eyebrow && <span class="sb-eyebrow">{s.eyebrow}</span>}
+                        <span>{s.shortTitle}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))
+        }
+      </nav>
+
+      <div class="sb-foot">
+        {
+          course.assetCount > 0 && (
+            <a href={`${course.url}#assets`} class="sb-link">
+              <Icon name="bot" size={16} /> Reusable assets <span class="badge">{course.assetCount}</span>
+            </a>
+          )
+        }
+        {
+          course.sourceUrl && (
+            <a href={course.sourceUrl} class="sb-link" target="_blank" rel="noopener noreferrer">
+              <Icon name="external" size={16} /> Open course on {course.provider.name}
+            </a>
+          )
+        }
+      </div>
+    </aside>
+
+    <article class="main">
+      <div class="toolbar">
+        <button type="button" class="btn btn-sm drawer-btn" data-drawer-open aria-controls="chapters" aria-expanded="false">
+          <Icon name="sidebar" size={16} /> Chapters
+        </button>
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <a href={course.url}>{course.title}</a>
+          <Icon name="chevronRight" size={14} />
+          {multiNote ? <a href={course.notes.find((n) => n.slug === section.noteSlug)?.url}>{section.noteTitle}</a> : <span>{section.noteTitle}</span>}
+        </nav>
+        <div class="tools">
+          <button type="button" class="btn btn-ghost btn-icon" data-text-size aria-label="Change text size" title="Text size">
+            <Icon name="type" />
+          </button>
+          <button type="button" class="btn btn-ghost btn-icon" data-focus-toggle aria-label="Toggle focus mode" title="Focus mode">
+            <Icon name="focus" />
+          </button>
+        </div>
+      </div>
+
+      <div data-pagefind-body>
+        <span hidden data-pagefind-meta="course">{course.title}</span>
+        <header class="head">
+          <p class="eyebrow" data-pagefind-ignore>
+            {section.eyebrow ?? `Chapter ${section.number}`} · {section.noteTitle}
+          </p>
+          <h1 data-pagefind-meta="title">{section.shortTitle}</h1>
+          <p class="meta" data-pagefind-ignore>
+            <span><Icon name="clock" size={15} /> {section.minutes} min read</span>
+            <span><Icon name="layers" size={15} /> {section.number} of {course.sections.length}</span>
+          </p>
+        </header>
+
+        <div class="prose" set:html={section.html} />
+      </div>
+
+      <div class="complete" data-section-id={section.id}>
+        <button type="button" class="btn complete-btn" data-complete-toggle={section.id}>
+          <Icon name="circle" size={18} class="c-off" />
+          <Icon name="checkCircle" size={18} class="c-on" />
+          <span class="c-off">Mark chapter as complete</span>
+          <span class="c-on">Completed</span>
+        </button>
+      </div>
+
+      <nav class="pager" aria-label="Chapter navigation">
+        {
+          prev ? (
+            <a href={prev.url} class="pager-link" rel="prev" data-nav-prev>
+              <span class="pager-hint">
+                <Icon name="arrowLeft" size={14} /> Previous
+              </span>
+              <span class="pager-title">{prev.shortTitle}</span>
+            </a>
+          ) : (
+            <a href={course.url} class="pager-link" rel="prev">
+              <span class="pager-hint">
+                <Icon name="arrowLeft" size={14} /> Back to
+              </span>
+              <span class="pager-title">Course overview</span>
+            </a>
+          )
+        }
+        {
+          next ? (
+            <a href={next.url} class="pager-link next" rel="next" data-nav-next>
+              <span class="pager-hint">
+                Next <Icon name="arrowRight" size={14} />
+              </span>
+              <span class="pager-title">{next.shortTitle}</span>
+            </a>
+          ) : (
+            <a href={course.url} class="pager-link next" rel="next">
+              <span class="pager-hint">
+                Finished <Icon name="flag" size={14} />
+              </span>
+              <span class="pager-title">Back to course overview</span>
+            </a>
+          )
+        }
+      </nav>
+    </article>
+
+    <aside class="toc" aria-label="On this page">
+      {
+        section.subheadings.length > 0 && (
+          <div class="toc-inner">
+            <p class="eyebrow">On this page</p>
+            <ul>
+              {section.subheadings.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`} data-toc={h.slug}>
+                    {h.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <a href="#main" class="to-top">
+              Back to top
+            </a>
+          </div>
+        )
+      }
+    </aside>
+  </div>
+
+  <script
+    is:inline
+    type="application/json"
+    id="reader-data"
+    set:html={JSON.stringify({
+      id: section.id,
+      url: section.url,
+      title: section.shortTitle,
+      courseSlug: course.slug,
+      courseTitle: course.title,
+    })}
+  />
+</BaseLayout>
+
+<script>
+  import { getDone, recordVisit, setDone } from '../scripts/progress';
+
+  const data = JSON.parse(document.getElementById('reader-data')!.textContent!);
+  recordVisit(data);
+
+  // --- completion toggle ---------------------------------------------------
+  document.querySelectorAll<HTMLButtonElement>('[data-complete-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.completeToggle!;
+      const done = !getDone().has(id);
+      setDone(id, done);
+      if (done) document.querySelector<HTMLElement>('[data-nav-next]')?.classList.add('pulse');
+    });
+  });
+
+  // --- reading progress bar ------------------------------------------------
+  const bar = document.getElementById('read-progress');
+  const article = document.querySelector<HTMLElement>('.main');
+  function onScroll(): void {
+    if (!bar || !article) return;
+    const rect = article.getBoundingClientRect();
+    const total = rect.height - window.innerHeight;
+    const pct = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 1;
+    bar.style.transform = `scaleX(${pct})`;
+  }
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // --- TOC scroll-spy ------------------------------------------------------
+  const tocLinks = new Map(
+    [...document.querySelectorAll<HTMLAnchorElement>('[data-toc]')].map((a) => [a.dataset.toc!, a]),
+  );
+  if (tocLinks.size) {
+    const headings = [...tocLinks.keys()]
+      .map((id) => document.getElementById(id))
+      .filter((h): h is HTMLElement => !!h);
+    const setActive = () => {
+      const offset = 120;
+      let current = headings[0];
+      for (const h of headings) if (h.getBoundingClientRect().top - offset <= 0) current = h;
+      tocLinks.forEach((a, id) => a.toggleAttribute('data-active', id === current?.id));
+    };
+    document.addEventListener('scroll', setActive, { passive: true });
+    setActive();
+  }
+
+  // --- mobile drawer -------------------------------------------------------
+  const reader = document.querySelector<HTMLElement>('[data-reader]')!;
+  const openBtn = document.querySelector<HTMLButtonElement>('[data-drawer-open]');
+  const setDrawer = (open: boolean) => {
+    reader.toggleAttribute('data-drawer', open);
+    openBtn?.setAttribute('aria-expanded', String(open));
+    if (open) document.querySelector<HTMLElement>('.sidebar [aria-current="page"]')?.focus();
+  };
+  openBtn?.addEventListener('click', () => setDrawer(true));
+  document.querySelectorAll('[data-drawer-close]').forEach((el) => el.addEventListener('click', () => setDrawer(false)));
+
+  // Keep the current chapter visible in the sidebar.
+  document.querySelector('.sb-nav [aria-current="page"]')?.scrollIntoView({ block: 'center' });
+
+  // --- reading preferences -------------------------------------------------
+  const root = document.documentElement;
+  const store = (k: string, v: string | null) => {
+    try {
+      v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
+    } catch {
+      /* ignore */
+    }
+  };
+  document.querySelector('[data-text-size]')?.addEventListener('click', () => {
+    const order = ['m', 'l', 's'];
+    const cur = root.dataset.textSize ?? 'm';
+    const next = order[(order.indexOf(cur) + 1) % order.length];
+    if (next === 'm') delete root.dataset.textSize;
+    else root.dataset.textSize = next;
+    store('kp:text-size', next === 'm' ? null : next);
+  });
+  document.querySelector('[data-focus-toggle]')?.addEventListener('click', () => {
+    const on = !root.hasAttribute('data-focus');
+    root.toggleAttribute('data-focus', on);
+    store('kp:focus', on ? '1' : null);
+  });
+
+  // --- keyboard: ← / → chapters, Esc closes drawer -------------------------
+  document.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable], dialog[open]')) return;
+    if (e.key === 'Escape') setDrawer(false);
+    const link =
+      e.key === 'ArrowLeft'
+        ? document.querySelector<HTMLAnchorElement>('[data-nav-prev]')
+        : e.key === 'ArrowRight'
+          ? document.querySelector<HTMLAnchorElement>('[data-nav-next]')
+          : null;
+    if (link) window.location.href = link.href;
+  });
+</script>
+
+<style>
+  .read-progress {
+    position: fixed;
+    top: var(--header-h);
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 49;
+    pointer-events: none;
+  }
+
+  .read-progress span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #d97757);
+    transform-origin: left;
+    transform: scaleX(0);
+  }
+
+  .reader {
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr) 230px;
+    gap: clamp(1.5rem, 3vw, 3.5rem);
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 1.75rem);
+  }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    position: sticky;
+    top: var(--header-h);
+    height: calc(100dvh - var(--header-h));
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 0 1rem;
+    border-right: 1px solid var(--border);
+    margin-left: calc(-1 * clamp(1rem, 3vw, 1.75rem));
+    padding-left: clamp(1rem, 3vw, 1.75rem);
+    background: var(--bg);
+  }
+
+  .sb-head {
+    position: relative;
+    padding-right: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .sb-course {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--text);
+  }
+
+  .sb-course > span:last-child {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .sb-provider {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .sb-title {
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .sb-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .sb-progress .progress {
+    flex: 1;
+    height: 4px;
+  }
+
+  .sb-close {
+    display: none;
+    position: absolute;
+    top: -0.25rem;
+    right: 0.25rem;
+  }
+
+  .sb-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.75rem;
+    margin-right: -0.25rem;
+    scrollbar-width: thin;
+  }
+
+  .sb-group + .sb-group {
+    margin-top: 1.25rem;
+  }
+
+  .sb-note {
+    display: block;
+    margin: 0 0 0.4rem;
+    padding: 0 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .sb-nav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sb-nav li a {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.4;
+    transition: background-color var(--t-fast), color var(--t-fast);
+  }
+
+  .sb-nav li a:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+
+  .sb-nav li a[aria-current='page'] {
+    background: var(--accent-soft);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .dot {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-top: 0.1rem;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-strong);
+    color: transparent;
+  }
+
+  a[aria-current='page'] .dot {
+    border-color: var(--accent);
+  }
+
+  a[data-done] .dot {
+    border-color: var(--success);
+    background: var(--success);
+    color: #fff;
+  }
+
+  .sb-label {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sb-eyebrow {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .sb-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding-top: 0.75rem;
+    margin-right: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .sb-link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 0.84rem;
+  }
+
+  .sb-link:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+
+  .sb-link .badge {
+    margin-left: auto;
+  }
+
+  /* ---------- main ---------- */
+  .main {
+    min-width: 0;
+    padding: 1.25rem 0 2rem;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .drawer-btn {
+    display: none;
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .crumbs a,
+  .crumbs span {
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .crumbs a:hover {
+    color: var(--text);
+  }
+
+  .tools {
+    display: flex;
+    gap: 0.15rem;
+    margin-left: auto;
+  }
+
+  .head {
+    max-width: var(--reader-measure);
+    margin-bottom: 2.25rem;
+  }
+
+  .head .eyebrow {
+    margin: 0 0 0.6rem;
+    color: var(--accent);
+  }
+
+  .head h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 1.3rem + 1.8vw, 2.5rem);
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin: 1rem 0 0;
+    font-size: 0.84rem;
+    color: var(--text-muted);
+  }
+
+  .meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .complete {
+    max-width: var(--reader-measure);
+    margin: 3rem 0 1.25rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+  }
+
+  .complete-btn {
+    height: 2.75rem;
+    padding: 0 1.25rem;
+    border-radius: var(--radius-pill);
+  }
+
+  .complete :global(.c-on) {
+    display: none;
+  }
+
+  .complete[data-done] .complete-btn {
+    border-color: var(--success);
+    background: var(--success-soft);
+    color: var(--success);
+  }
+
+  .complete[data-done] :global(.c-on) {
+    display: inline;
+  }
+
+  .complete[data-done] :global(svg.c-on) {
+    display: block;
+  }
+
+  .complete[data-done] :global(.c-off) {
+    display: none;
+  }
+
+  .pager {
+    max-width: var(--reader-measure);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .pager-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+  }
+
+  .pager-link:hover {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    box-shadow: var(--shadow);
+  }
+
+  .pager-link.next {
+    text-align: right;
+    align-items: flex-end;
+  }
+
+  .pager-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .pager-title {
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .pager-link:global(.pulse) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+
+  /* ---------- toc ---------- */
+  .toc-inner {
+    position: sticky;
+    top: calc(var(--header-h) + 2rem);
+    max-height: calc(100dvh - var(--header-h) - 4rem);
+    overflow-y: auto;
+    padding-top: 3.25rem;
+  }
+
+  .toc .eyebrow {
+    margin: 0 0 0.75rem;
+  }
+
+  .toc ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--border);
+  }
+
+  .toc li a {
+    display: block;
+    margin-left: -1px;
+    padding: 0.35rem 0 0.35rem 0.9rem;
+    border-left: 2px solid transparent;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.4;
+    transition: color var(--t-fast), border-color var(--t-fast);
+  }
+
+  .toc li a:hover {
+    color: var(--text);
+  }
+
+  .toc li a[data-active] {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 550;
+  }
+
+  .to-top {
+    display: inline-block;
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .scrim {
+    display: none;
+  }
+
+  /* ---------- focus mode ---------- */
+  :global(:root[data-focus]) .reader {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: calc(var(--reader-measure) + 6rem);
+  }
+
+  :global(:root[data-focus]) .sidebar,
+  :global(:root[data-focus]) .toc {
+    display: none;
+  }
+
+  :global(:root[data-focus]) .drawer-btn {
+    display: none !important;
+  }
+
+  :global(:root[data-focus]) [data-focus-toggle] {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1240px) {
+    .reader {
+      grid-template-columns: 270px minmax(0, 1fr);
+    }
+    .toc {
+      display: none;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .reader {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .drawer-btn {
+      display: inline-flex;
+    }
+
+    .sidebar {
+      position: fixed;
+      z-index: 60;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      height: 100dvh;
+      width: min(340px, 88vw);
+      margin: 0;
+      padding: 1.25rem 0 1rem 1.25rem;
+      border-right: 1px solid var(--border);
+      background: var(--bg-elevated);
+      box-shadow: var(--shadow-lg);
+      transform: translateX(-105%);
+      transition: transform 260ms var(--ease);
+      visibility: hidden;
+    }
+
+    .sb-close {
+      display: inline-flex;
+    }
+
+    .reader[data-drawer] .sidebar {
+      transform: none;
+      visibility: visible;
+    }
+
+    .scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      background: var(--backdrop);
+    }
+
+    .reader[data-drawer] .scrim {
+      display: block;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .crumbs {
+      display: none;
+    }
+    .pager {
+      grid-template-columns: 1fr;
+    }
+    .pager-link.next {
+      text-align: left;
+      align-items: flex-start;
+    }
+  }
+</style>

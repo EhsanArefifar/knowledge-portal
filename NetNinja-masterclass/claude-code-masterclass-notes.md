@@ -743,7 +743,7 @@ graph TD
 
 ## Reusable assets
 
-```markdown
+````markdown
 ---
 description: Create a commit message by analyzing git diffs
 allowed-tools: Bash(git status:*), Bash(git diff --staged), Bash(git commit:*)
@@ -779,7 +779,7 @@ Use only these:
 3. A confirmation request before committing
 
 Do not auto-commit. Wait for user confirmation.
-```
+````
 
 ### `.claude/commands/component.md` — argument pattern skeleton
 ```markdown

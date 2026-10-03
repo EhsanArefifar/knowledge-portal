@@ -1,0 +1,88 @@
+---
+/** External link row with provider logo — used for upcoming courses and resources. */
+import Icon from './Icon.astro';
+import ProviderLogo from './ProviderLogo.astro';
+import { getProvider } from '../data/providers';
+
+interface Props {
+  title: string;
+  url: string;
+  description?: string;
+  provider?: string;
+  index?: number;
+}
+
+const { title, url, description, provider, index } = Astro.props;
+const p = getProvider(provider ?? new URL(url).hostname);
+---
+
+<a class="link card" href={url} target="_blank" rel="noopener noreferrer">
+  {index !== undefined && <span class="index">{String(index).padStart(2, '0')}</span>}
+  <ProviderLogo provider={p} size={38} />
+  <span class="text">
+    <span class="title">{title}</span>
+    {description && <span class="desc">{description}</span>}
+    {provider && <span class="provider">{p.name}</span>}
+  </span>
+  <Icon name="external" size={16} class="ext" />
+</a>
+
+<style>
+  .link {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: var(--radius);
+    color: var(--text);
+    transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+  }
+
+  .link:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+  }
+
+  .index {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .title {
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .desc {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .provider {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-faint);
+  }
+
+  .link :global(.ext) {
+    flex-shrink: 0;
+    color: var(--text-faint);
+  }
+
+  .link:hover :global(.ext) {
+    color: var(--accent);
+  }
+</style>

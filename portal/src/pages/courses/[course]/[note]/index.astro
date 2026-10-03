@@ -1,0 +1,110 @@
+---
+/** Note overview — the note's intro and its chapters. */
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ChapterList from '../../../../components/ChapterList.astro';
+import Icon from '../../../../components/Icon.astro';
+import { formatMinutes, getCourses, type Course, type Note } from '../../../../lib/content';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const courses = await getCourses();
+  return courses.flatMap((course) =>
+    course.notes.map((note) => ({ params: { course: course.slug, note: note.slug }, props: { course, note } })),
+  );
+};
+
+const { course, note } = Astro.props as { course: Course; note: Note };
+const minutes = note.sections.reduce((n, s) => n + s.minutes, 0);
+---
+
+<BaseLayout title={`${note.title} — ${course.title}`}>
+  <div class="container page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href={course.url}>{course.title}</a>
+      <Icon name="chevronRight" size={14} />
+      <span>{note.title}</span>
+    </nav>
+
+    <header class="head" data-progress={note.sections.map((s) => s.id).join('|')}>
+      <h1>{note.title}</h1>
+      <p class="muted">{note.sections.length} chapters · {formatMinutes(minutes)} of reading</p>
+      <div class="progress-row">
+        <div class="progress"><span></span></div>
+        <span class="muted small" data-progress-label>Not started</span>
+      </div>
+      {
+        note.sections[0] && (
+          <a class="btn btn-primary" href={note.sections[0].url}>
+            Start with chapter 1 <Icon name="arrowRight" size={16} />
+          </a>
+        )
+      }
+    </header>
+
+    {note.introHtml && <div class="prose intro" set:html={note.introHtml} />}
+
+    <ChapterList sections={note.sections} />
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    max-width: 860px;
+    padding-top: 2rem;
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.84rem;
+    color: var(--text-muted);
+  }
+
+  .crumbs a {
+    color: var(--text-muted);
+  }
+
+  .head {
+    margin: 1.5rem 0 2rem;
+  }
+
+  h1 {
+    margin: 0 0 0.4rem;
+    font-size: clamp(1.8rem, 1.3rem + 1.8vw, 2.4rem);
+    font-weight: 750;
+    letter-spacing: -0.025em;
+  }
+
+  .head p {
+    margin: 0;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 420px;
+    margin: 1rem 0 1.25rem;
+  }
+
+  .progress-row .progress {
+    flex: 1;
+  }
+
+  .small {
+    font-size: 0.8rem;
+  }
+
+  .intro {
+    margin-bottom: 2rem;
+    padding: 1.1rem 1.3rem;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    font-size: 0.95rem;
+  }
+
+  .intro :global(> :last-child) {
+    margin-bottom: 0;
+  }
+</style>

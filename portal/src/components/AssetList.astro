@@ -1,0 +1,240 @@
+---
+/**
+ * Reusable Claude Code assets (agents, commands, skills) as expandable cards
+ * with highlighted source, install path and per-file / zip download.
+ */
+import { Code } from 'astro:components';
+import Icon from './Icon.astro';
+import type { Course } from '../lib/content';
+
+interface Props {
+  course: Course;
+}
+
+const { course } = Astro.props;
+const kindIcon = { agents: 'bot', commands: 'terminal', skills: 'sparkles' } as const;
+const iconFor = (kind: string) => kindIcon[kind as keyof typeof kindIcon] ?? 'file';
+---
+
+<section class="assets" id="assets" aria-labelledby="assets-title">
+  <div class="section-title">
+    <div>
+      <h2 id="assets-title">Reusable assets</h2>
+      <p class="muted lead">
+        Drop-in Claude Code files from this course. Expand to read, download one, or grab them all with their
+        <code>.claude/</code> folder layout.
+      </p>
+    </div>
+    {
+      course.zipUrl && (
+        <a class="btn btn-primary" href={course.zipUrl} download>
+          <Icon name="download" size={16} /> Download all (.zip)
+        </a>
+      )
+    }
+  </div>
+
+  <div data-pagefind-body data-pagefind-meta={`title:Assets — ${course.title}`}>
+    <span hidden data-pagefind-meta="course">{course.title}</span>
+    {
+      course.assetGroups.map((group) => (
+        <div class="group">
+          <h3 class="group-title">
+            <Icon name={iconFor(group.kind)} size={16} />
+            {group.label}
+            <span class="badge">{group.assets.length}</span>
+          </h3>
+          <div class="items">
+            {group.assets.map((asset) => (
+              <details class="asset card" id={`asset-${asset.relPath.replace(/[^a-z0-9]+/gi, '-')}`}>
+                <summary>
+                  <span class={`kind kind-${group.kind}`}>
+                    <Icon name={iconFor(group.kind)} size={18} />
+                  </span>
+                  <span class="head">
+                    <span class="name">{asset.name}</span>
+                    {asset.description && <span class="desc">{asset.description}</span>}
+                  </span>
+                  <Icon name="chevronDown" size={18} class="chev" />
+                </summary>
+                <div class="content">
+                  <div class="toolbar">
+                    <code class="path" title="Install path">{asset.installPath}</code>
+                    {asset.meta.map((m) => (
+                      <span class="badge">
+                        {m.label}: {m.value}
+                      </span>
+                    ))}
+                    <a class="btn btn-sm dl" href={asset.downloadUrl} download={asset.relPath.split('/').pop()}>
+                      <Icon name="download" size={14} /> Download
+                    </a>
+                  </div>
+                  <div class="code-block">
+                    <Code
+                      code={asset.raw}
+                      lang="markdown"
+                      themes={{ light: 'github-light', dark: 'github-dark' }}
+                      defaultColor={false}
+                      wrap
+                    />
+                  </div>
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .assets {
+    margin-top: 3.5rem;
+  }
+
+  .lead {
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    max-width: 60ch;
+  }
+
+  .lead code {
+    font-family: var(--font-code);
+    font-size: 0.85em;
+  }
+
+  .group + .group {
+    margin-top: 2rem;
+  }
+
+  .group-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 650;
+    color: var(--text-muted);
+  }
+
+  .items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .asset {
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  }
+
+  .asset[open] {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow);
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.95rem 1.1rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:hover {
+    background: var(--surface-hover);
+  }
+
+  .kind {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .kind-commands {
+    background: var(--success-soft);
+    color: var(--success);
+  }
+
+  .kind-skills {
+    background: var(--warning-soft);
+    color: var(--warning);
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .name {
+    font-family: var(--font-code);
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .desc {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  summary :global(.chev) {
+    flex-shrink: 0;
+    color: var(--text-faint);
+    transition: transform var(--t);
+  }
+
+  .asset[open] summary :global(.chev) {
+    transform: rotate(180deg);
+  }
+
+  .content {
+    padding: 0 1.1rem 1.1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.85rem 0;
+  }
+
+  .path {
+    font-family: var(--font-code);
+    font-size: 0.78rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--code-inline-bg);
+  }
+
+  .dl {
+    margin-left: auto;
+  }
+
+  .code-block :global(pre) {
+    margin: 0;
+    max-height: 32rem;
+    overflow: auto;
+    font-size: 0.8rem;
+  }
+</style>

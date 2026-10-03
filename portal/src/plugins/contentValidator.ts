@@ -133,8 +133,10 @@ type InternalRef = { type: 'link' | 'image'; value: string };
  * Extract all `<a href="…">` and `<img src="…">` values from raw HTML.
  * Handles both single- and double-quoted attribute values.
  */
-function extractRefs(html: string): InternalRef[] {
+function extractRefs(rawHtml: string): InternalRef[] {
   const refs: InternalRef[] = [];
+  // Script bodies contain template strings like `<a href="${url}">` — not real links.
+  const html = rawHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
 
   // Match <a href="..."> and <a href='...'>
   const aPattern = /<a\s[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;

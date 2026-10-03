@@ -496,27 +496,116 @@ kbd {
   }
 }
 
-/* Mermaid diagrams — inline SVG at build time, framed by enhanceDiagrams() */
+/* Mermaid diagrams — inline SVG at build time; enhanceDiagrams() adds the
+   figure wrapper, the expand button and the full-size lightbox. */
 .prose .diagram {
+  position: relative;
   margin: 1.5em 0;
+}
+
+.diagram-canvas {
   padding: 1.25rem;
-  overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #ffffff;
-  scrollbar-width: thin;
 }
 
-.prose .diagram svg {
+.prose .diagram-canvas {
+  cursor: zoom-in;
+}
+
+.diagram-canvas svg {
   display: block;
+  width: 100%;
   height: auto;
   margin-inline: auto;
 }
 
 /* inline-svg has no dark variant; invert the neutral theme instead */
-:root[data-theme='dark'] .prose .diagram {
+:root[data-theme='dark'] .diagram-canvas {
   filter: invert(0.9) hue-rotate(180deg);
   border-color: #dddddd;
+}
+
+.diagram-expand {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+
+.diagram-expand:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.diagram-lightbox {
+  width: calc(100vw - 2rem);
+  max-width: none;
+  height: calc(100dvh - 2rem);
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.diagram-lightbox[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.diagram-lightbox::backdrop {
+  background: var(--backdrop);
+  backdrop-filter: blur(4px);
+}
+
+.diagram-lightbox-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.5rem 0.5rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.diagram-lightbox-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  padding: 1.5rem;
+}
+
+/* margin:auto centres a small diagram but still lets a large one scroll from its edge */
+.diagram-lightbox-body .diagram-canvas {
+  flex-shrink: 0;
+  margin: auto;
+}
+
+/* keeps right-hand breathing room when a wide diagram scrolls */
+.diagram-lightbox-body::after {
+  content: '';
+  flex: 0 0 1.5rem;
+}
+
+.diagram-lightbox-body .diagram-canvas svg {
+  width: auto;
 }
 
 /* -----------------------------------------------------------------------------

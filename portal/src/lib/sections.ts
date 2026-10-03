@@ -23,7 +23,6 @@ export interface SectionPart {
   shortTitle: string;
   html: string;
   subheadings: Heading[];
-  minutes: number;
 }
 
 export interface SplitResult {
@@ -47,11 +46,6 @@ export function stripTags(html: string): string {
     .replace(/&[a-z#0-9]+;/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-export function readingMinutes(html: string, wpm = 220): number {
-  const words = stripTags(html).split(' ').filter(Boolean).length;
-  return Math.max(1, Math.round(words / wpm));
 }
 
 /** Collapse the double dashes github-slugger leaves behind for punctuation. */
@@ -108,7 +102,6 @@ export function splitNoteHtml(
           subheadings: tags
             .filter((t) => t.depth === 2 || t.depth === 3)
             .map((t) => ({ depth: t.depth, slug: t.anchor, text: t.text })),
-          minutes: readingMinutes(body),
         },
       ],
     };
@@ -133,7 +126,6 @@ export function splitNoteHtml(
       subheadings: tags
         .filter((t) => t.depth === depth + 1 && t.index > b.index && t.index < stop)
         .map((t) => ({ depth: t.depth, slug: t.anchor, text: t.text })),
-      minutes: readingMinutes(sectionHtml),
     };
   });
 
@@ -141,7 +133,7 @@ export function splitNoteHtml(
   if (!hasContent(intro)) return { introHtml: '', sections };
 
   // A short blurb stays as the note's intro; real content becomes chapter one
-  // so reading chapter by chapter never skips it.
+  // so browsing chapter by chapter never skips it.
   if (stripTags(intro).split(' ').length < INTRO_SECTION_WORDS) return { introHtml: intro, sections };
 
   const lead = tags.find((t) => t.index < boundaries[0].index);
@@ -158,7 +150,6 @@ export function splitNoteHtml(
     shortTitle,
     html: introBody,
     subheadings: [],
-    minutes: readingMinutes(introBody),
   });
   return { introHtml: '', sections };
 }

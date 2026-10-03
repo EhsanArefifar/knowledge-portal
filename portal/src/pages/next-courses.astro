@@ -4,7 +4,7 @@ import LinkCard from '../components/LinkCard.astro';
 import { upcomingCourses } from '../data/links';
 import { getCourses } from '../lib/content';
 
-const current = await getCourses();
+const completed = await getCourses();
 ---
 
 <BaseLayout title="Up next">
@@ -12,26 +12,26 @@ const current = await getCourses();
     <header class="head">
       <p class="eyebrow">Roadmap</p>
       <h1>Up next</h1>
-      <p class="muted">Courses lined up after the current ones, in order. Each link opens the course page.</p>
+      <p class="muted">Courses lined up next, in order, plus the ones already done. Each link opens the course page.</p>
     </header>
-
-    <section>
-      <h2 class="sub">Currently studying</h2>
-      <div class="list">
-        {
-          current.map((c) =>
-            c.sourceUrl ? (
-              <LinkCard title={c.title} url={c.sourceUrl} description={c.description} provider={c.provider.name} />
-            ) : null,
-          )
-        }
-      </div>
-    </section>
 
     <section>
       <h2 class="sub">Planned</h2>
       <div class="list">
         {upcomingCourses.map((c, i) => <LinkCard title={c.title} url={c.url} description={c.blurb} provider={c.provider} index={i + 1} />)}
+      </div>
+    </section>
+
+    <section>
+      <h2 class="sub">Completed</h2>
+      <div class="list">
+        {
+          completed.map((c) =>
+            c.sourceUrl ? (
+              <LinkCard title={c.title} url={c.sourceUrl} description={c.description} provider={c.provider.name} />
+            ) : null,
+          )
+        }
       </div>
     </section>
   </div>

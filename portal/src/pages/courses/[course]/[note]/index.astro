@@ -4,7 +4,7 @@ import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import ChapterList from '../../../../components/ChapterList.astro';
 import Icon from '../../../../components/Icon.astro';
-import { formatMinutes, getCourses, type Course, type Note } from '../../../../lib/content';
+import { getCourses, type Course, type Note } from '../../../../lib/content';
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const courses = await getCourses();
@@ -14,7 +14,6 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 const { course, note } = Astro.props as { course: Course; note: Note };
-const minutes = note.sections.reduce((n, s) => n + s.minutes, 0);
 ---
 
 <BaseLayout title={`${note.title} — ${course.title}`}>
@@ -25,20 +24,9 @@ const minutes = note.sections.reduce((n, s) => n + s.minutes, 0);
       <span>{note.title}</span>
     </nav>
 
-    <header class="head" data-progress={note.sections.map((s) => s.id).join('|')}>
+    <header class="head">
       <h1>{note.title}</h1>
-      <p class="muted">{note.sections.length} chapters · {formatMinutes(minutes)} of reading</p>
-      <div class="progress-row">
-        <div class="progress"><span></span></div>
-        <span class="muted small" data-progress-label>Not started</span>
-      </div>
-      {
-        note.sections[0] && (
-          <a class="btn btn-primary" href={note.sections[0].url}>
-            Start with chapter 1 <Icon name="arrowRight" size={16} />
-          </a>
-        )
-      }
+      <p class="muted">{note.sections.length} chapters</p>
     </header>
 
     {note.introHtml && <div class="prose intro" set:html={note.introHtml} />}
@@ -78,22 +66,6 @@ const minutes = note.sections.reduce((n, s) => n + s.minutes, 0);
 
   .head p {
     margin: 0;
-  }
-
-  .progress-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    max-width: 420px;
-    margin: 1rem 0 1.25rem;
-  }
-
-  .progress-row .progress {
-    flex: 1;
-  }
-
-  .small {
-    font-size: 0.8rem;
   }
 
   .intro {

@@ -22,7 +22,6 @@ const { course, section } = Astro.props;
 const idx = course.sections.findIndex((s) => s.id === section.id);
 const prev = course.sections[idx - 1];
 const next = course.sections[idx + 1];
-const ids = course.sections.map((s) => s.id).join('|');
 const multiNote = course.notes.length > 1;
 ---
 
@@ -33,7 +32,7 @@ const multiNote = course.notes.length > 1;
     <div class="scrim" data-drawer-close aria-hidden="true"></div>
 
     <aside class="sidebar" id="chapters" aria-label="Course chapters">
-      <div class="sb-head" data-progress={ids}>
+      <div class="sb-head">
         <a href={course.url} class="sb-course">
           <ProviderLogo provider={course.provider} size={34} />
           <span>
@@ -41,10 +40,6 @@ const multiNote = course.notes.length > 1;
             <span class="sb-title">{course.title}</span>
           </span>
         </a>
-        <div class="sb-progress">
-          <div class="progress"><span></span></div>
-          <span data-progress-label>Not started</span>
-        </div>
         <button type="button" class="btn btn-ghost btn-icon sb-close" data-drawer-close aria-label="Close chapters">
           <Icon name="close" />
         </button>
@@ -62,10 +57,7 @@ const multiNote = course.notes.length > 1;
               <ol>
                 {note.sections.map((s) => (
                   <li>
-                    <a href={s.url} data-section-id={s.id} aria-current={s.id === section.id ? 'page' : undefined}>
-                      <span class="dot" aria-hidden="true">
-                        <Icon name="check" size={12} />
-                      </span>
+                    <a href={s.url} aria-current={s.id === section.id ? 'page' : undefined}>
                       <span class="sb-label">
                         {s.eyebrow && <span class="sb-eyebrow">{s.eyebrow}</span>}
                         <span>{s.shortTitle}</span>
@@ -125,21 +117,11 @@ const multiNote = course.notes.length > 1;
           </p>
           <h1 data-pagefind-meta="title">{section.shortTitle}</h1>
           <p class="meta" data-pagefind-ignore>
-            <span><Icon name="clock" size={15} /> {section.minutes} min read</span>
             <span><Icon name="layers" size={15} /> {section.number} of {course.sections.length}</span>
           </p>
         </header>
 
         <div class="prose" set:html={section.html} />
-      </div>
-
-      <div class="complete" data-section-id={section.id}>
-        <button type="button" class="btn complete-btn" data-complete-toggle={section.id}>
-          <Icon name="circle" size={18} class="c-off" />
-          <Icon name="checkCircle" size={18} class="c-on" />
-          <span class="c-off">Mark chapter as complete</span>
-          <span class="c-on">Completed</span>
-        </button>
       </div>
 
       <nav class="pager" aria-label="Chapter navigation">
@@ -203,37 +185,10 @@ const multiNote = course.notes.length > 1;
     </aside>
   </div>
 
-  <script
-    is:inline
-    type="application/json"
-    id="reader-data"
-    set:html={JSON.stringify({
-      id: section.id,
-      url: section.url,
-      title: section.shortTitle,
-      courseSlug: course.slug,
-      courseTitle: course.title,
-    })}
-  />
 </BaseLayout>
 
 <script>
-  import { getDone, recordVisit, setDone } from '../scripts/progress';
-
-  const data = JSON.parse(document.getElementById('reader-data')!.textContent!);
-  recordVisit(data);
-
-  // --- completion toggle ---------------------------------------------------
-  document.querySelectorAll<HTMLButtonElement>('[data-complete-toggle]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.completeToggle!;
-      const done = !getDone().has(id);
-      setDone(id, done);
-      if (done) document.querySelector<HTMLElement>('[data-nav-next]')?.classList.add('pulse');
-    });
-  });
-
-  // --- reading progress bar ------------------------------------------------
+  // --- scroll position bar ------------------------------------------------
   const bar = document.getElementById('read-progress');
   const article = document.querySelector<HTMLElement>('.main');
   function onScroll(): void {
@@ -388,21 +343,6 @@ const multiNote = course.notes.length > 1;
     line-height: 1.25;
   }
 
-  .sb-progress {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-top: 0.9rem;
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-  }
-
-  .sb-progress .progress {
-    flex: 1;
-    height: 4px;
-  }
-
   .sb-close {
     display: none;
     position: absolute;
@@ -443,7 +383,8 @@ const multiNote = course.notes.length > 1;
     display: flex;
     align-items: flex-start;
     gap: 0.65rem;
-    padding: 0.5rem 0.6rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 2px solid transparent;
     border-radius: var(--radius-sm);
     color: var(--text-muted);
     font-size: 0.875rem;
@@ -457,31 +398,10 @@ const multiNote = course.notes.length > 1;
   }
 
   .sb-nav li a[aria-current='page'] {
+    border-left-color: var(--accent);
     background: var(--accent-soft);
     color: var(--text);
     font-weight: 600;
-  }
-
-  .dot {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 1.05rem;
-    height: 1.05rem;
-    margin-top: 0.1rem;
-    border-radius: 50%;
-    border: 1.5px solid var(--border-strong);
-    color: transparent;
-  }
-
-  a[aria-current='page'] .dot {
-    border-color: var(--accent);
-  }
-
-  a[data-done] .dot {
-    border-color: var(--success);
-    background: var(--success);
-    color: #fff;
   }
 
   .sb-label {
@@ -602,45 +522,11 @@ const multiNote = course.notes.length > 1;
     gap: 0.35rem;
   }
 
-  .complete {
-    max-width: var(--reader-measure);
-    margin: 3rem 0 1.25rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: center;
-  }
-
-  .complete-btn {
-    height: 2.75rem;
-    padding: 0 1.25rem;
-    border-radius: var(--radius-pill);
-  }
-
-  .complete :global(.c-on) {
-    display: none;
-  }
-
-  .complete[data-done] .complete-btn {
-    border-color: var(--success);
-    background: var(--success-soft);
-    color: var(--success);
-  }
-
-  .complete[data-done] :global(.c-on) {
-    display: inline;
-  }
-
-  .complete[data-done] :global(svg.c-on) {
-    display: block;
-  }
-
-  .complete[data-done] :global(.c-off) {
-    display: none;
-  }
-
   .pager {
     max-width: var(--reader-measure);
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
@@ -681,11 +567,6 @@ const multiNote = course.notes.length > 1;
   .pager-title {
     font-weight: 600;
     line-height: 1.35;
-  }
-
-  .pager-link:global(.pulse) {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px var(--accent-soft);
   }
 
   /* ---------- toc ---------- */

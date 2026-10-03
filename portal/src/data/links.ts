@@ -53,8 +53,8 @@ export interface LinkItem {
 
 export const quickAccessLinks: LinkItem[] = [
   { label: 'Anthropic Skilljar', url: 'https://anthropic.skilljar.com', description: 'All Anthropic Academy courses.', provider: 'Anthropic' },
-  { label: 'Claude 101', url: 'https://anthropic.skilljar.com/claude-101', description: 'Current Anthropic Academy course.', provider: 'Anthropic' },
-  { label: 'Claude Code in Action', url: 'https://anthropic.skilljar.com/claude-code-in-action', description: 'Current Anthropic Academy course.', provider: 'Anthropic' },
+  { label: 'Claude 101', url: 'https://anthropic.skilljar.com/claude-101', description: 'Anthropic Academy course.', provider: 'Anthropic' },
+  { label: 'Claude Code in Action', url: 'https://anthropic.skilljar.com/claude-code-in-action', description: 'Anthropic Academy course.', provider: 'Anthropic' },
   { label: 'Claude Partner Network', url: 'https://www.anthropic.com/news/claude-partner-network', description: 'Partner program, training and certification.', provider: 'Anthropic' },
   { label: 'Claude Code docs', url: 'https://code.claude.com/docs', description: 'Skills, plugins, hooks, permissions, settings, subagents.', provider: 'Anthropic' },
   { label: 'Claude Platform docs', url: 'https://platform.claude.com/docs', description: 'API, Agent SDK and Agent Skills.', provider: 'Anthropic' },

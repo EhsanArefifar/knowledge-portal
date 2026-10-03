@@ -206,7 +206,7 @@ kbd {
 }
 
 /* -----------------------------------------------------------------------------
-   Cards, badges, progress
+   Cards, badges
    ----------------------------------------------------------------------------- */
 .card {
   background: var(--surface);
@@ -231,23 +231,6 @@ kbd {
 .badge-accent {
   background: var(--accent-soft);
   color: var(--accent);
-}
-
-.progress {
-  --pct: 0%;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--surface-2);
-  overflow: hidden;
-}
-
-.progress > span {
-  display: block;
-  height: 100%;
-  width: var(--pct);
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--success)));
-  transition: width 600ms var(--ease);
 }
 
 .section-title {

@@ -4,13 +4,11 @@ import CourseCard from '../components/CourseCard.astro';
 import Icon from '../components/Icon.astro';
 import LinkCard from '../components/LinkCard.astro';
 import { quickAccessLinks, upcomingCourses } from '../data/links';
-import { formatMinutes, getCourses, href } from '../lib/content';
+import { getCourses, href } from '../lib/content';
 
 const courses = await getCourses();
 const chapters = courses.reduce((n, c) => n + c.sections.length, 0);
-const minutes = courses.reduce((n, c) => n + c.totalMinutes, 0);
 const assets = courses.reduce((n, c) => n + c.assetCount, 0);
-const allIds = courses.flatMap((c) => c.sections.map((s) => s.id)).join('|');
 ---
 
 <BaseLayout title="Home">
@@ -20,8 +18,8 @@ const allIds = courses.flatMap((c) => c.sections.map((s) => s.id)).join('|');
         <p class="eyebrow">Personal AI learning portal</p>
         <h1>Learn it once.<br /><span class="grad">Find it in seconds.</span></h1>
         <p class="lead">
-          Notes from Claude and AI engineering courses, split into short chapters you can read, search and tick off —
-          plus the agents, commands and skills built along the way.
+          Notes from finished Claude and AI engineering courses, split into short chapters so any topic is one search
+          or click away — plus the agents, commands and skills built along the way.
         </p>
         <div class="cta">
           <a class="btn btn-primary" href={href('courses/')}>Browse courses <Icon name="arrowRight" size={16} /></a>
@@ -30,21 +28,10 @@ const allIds = courses.flatMap((c) => c.sections.map((s) => s.id)).join('|');
       </div>
 
       <div class="hero-side">
-        <a class="continue card" data-continue-any hidden href="#">
-          <span class="eyebrow">Continue reading</span>
-          <span class="continue-title" data-continue-title></span>
-          <span class="continue-course muted" data-continue-course></span>
-          <span class="continue-go">Resume <Icon name="arrowRight" size={16} /></span>
-        </a>
-        <div class="stats card" data-progress={allIds}>
+        <div class="stats card">
           <div><strong>{courses.length}</strong><span>courses</span></div>
           <div><strong>{chapters}</strong><span>chapters</span></div>
-          <div><strong>{formatMinutes(minutes)}</strong><span>reading</span></div>
           <div><strong>{assets}</strong><span>assets</span></div>
-          <div class="overall">
-            <div class="progress"><span></span></div>
-            <span data-progress-label>Not started</span>
-          </div>
         </div>
       </div>
     </div>
@@ -53,7 +40,7 @@ const allIds = courses.flatMap((c) => c.sections.map((s) => s.id)).join('|');
   <div class="container">
     <section class="block">
       <div class="section-title">
-        <h2>Current courses</h2>
+        <h2>Courses</h2>
         <a href={href('courses/')}>All courses →</a>
       </div>
       <div class="grid">
@@ -149,58 +136,14 @@ const allIds = courses.flatMap((c) => c.sections.map((s) => s.id)).join('|');
     gap: 1rem;
   }
 
-  .continue {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    padding: 1.2rem 1.3rem;
-    color: var(--text);
-    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
-    transition: box-shadow var(--t), transform var(--t);
-  }
-
-  .continue[hidden] {
-    display: none;
-  }
-
-  .continue:hover {
-    color: var(--text);
-    box-shadow: var(--shadow);
-    transform: translateY(-2px);
-  }
-
-  .continue .eyebrow {
-    color: var(--accent);
-  }
-
-  .continue-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-top: 0.25rem;
-  }
-
-  .continue-course {
-    font-size: 0.85rem;
-  }
-
-  .continue-go {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.6rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--accent);
-  }
-
   .stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
     padding: 1.2rem 1.3rem;
   }
 
-  .stats > div:not(.overall) {
+  .stats > div {
     display: flex;
     flex-direction: column;
   }
@@ -214,17 +157,6 @@ const allIds = courses.flatMap((c) => c.sections.map((s) => s.id)).join('|');
   .stats span {
     font-size: 0.78rem;
     color: var(--text-muted);
-  }
-
-  .overall {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .overall .progress {
-    flex: 1;
   }
 
   .block {
@@ -256,9 +188,4 @@ const allIds = courses.flatMap((c) => c.sections.map((s) => s.id)).join('|');
     }
   }
 
-  @media (max-width: 480px) {
-    .stats {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
 </style>

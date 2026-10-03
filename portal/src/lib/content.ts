@@ -63,7 +63,6 @@ export interface Course {
   sections: Section[];
   assetGroups: AssetGroup[];
   assetCount: number;
-  totalMinutes: number;
   zipUrl?: string;
 }
 
@@ -281,14 +280,6 @@ function buildCourse(
     sections,
     assetGroups,
     assetCount,
-    totalMinutes: sections.reduce((n, s) => n + s.minutes, 0),
     zipUrl: assetCount > 0 ? href(`downloads/${slug}.zip`) : undefined,
   };
-}
-
-export function formatMinutes(min: number): string {
-  if (min < 60) return `${min} min`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
 }

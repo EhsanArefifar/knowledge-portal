@@ -1,5 +1,5 @@
 ---
-/** Numbered chapter list with completion state, used on course and note pages. */
+/** Numbered chapter list with each chapter's subtitles, used on course and note pages. */
 import Icon from './Icon.astro';
 import type { Section } from '../lib/content';
 
@@ -13,12 +13,9 @@ const { sections } = Astro.props;
 <ol class="chapters">
   {
     sections.map((s) => (
-      <li data-section-id={s.id}>
+      <li>
         <a href={s.url}>
-          <span class="num" aria-hidden="true">
-            <span class="n">{String(s.number).padStart(2, '0')}</span>
-            <Icon name="check" size={16} class="tick" />
-          </span>
+          <span class="num" aria-hidden="true">{String(s.number).padStart(2, '0')}</span>
           <span class="body">
             {s.eyebrow && <span class="eyebrow">{s.eyebrow}</span>}
             <span class="name">{s.shortTitle}</span>
@@ -32,7 +29,6 @@ const { sections } = Astro.props;
               </span>
             )}
           </span>
-          <span class="time">{s.minutes} min</span>
           <Icon name="chevronRight" size={18} class="chev" />
         </a>
       </li>
@@ -82,23 +78,6 @@ const { sections } = Astro.props;
     font-variant-numeric: tabular-nums;
   }
 
-  .num :global(.tick) {
-    display: none;
-  }
-
-  li[data-done] .num {
-    background: var(--success-soft);
-    color: var(--success);
-  }
-
-  li[data-done] .n {
-    display: none;
-  }
-
-  li[data-done] .num :global(.tick) {
-    display: block;
-  }
-
   .body {
     display: flex;
     flex-direction: column;
@@ -124,21 +103,8 @@ const { sections } = Astro.props;
     text-overflow: ellipsis;
   }
 
-  .time {
-    flex-shrink: 0;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-  }
-
   a :global(.chev) {
     flex-shrink: 0;
     color: var(--text-faint);
-  }
-
-  @media (max-width: 560px) {
-    .time {
-      display: none;
-    }
   }
 </style>

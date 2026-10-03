@@ -29,11 +29,11 @@ export const getStaticPaths: GetStaticPaths = async () => {
   // Load course metadata
   const courseMetaMap: Record<string, { provider: string; sourceUrl?: string }> = {};
   try {
-    const meta = await import('../../../../Claude-academy/_course.json');
+    const meta = await import('../../../../../Claude-academy/_course.json');
     courseMetaMap['Claude-academy'] = meta.default ?? meta;
   } catch { /* not found */ }
   try {
-    const meta = await import('../../../../NetNinja-masterclass/_course.json');
+    const meta = await import('../../../../../NetNinja-masterclass/_course.json');
     courseMetaMap['NetNinja-masterclass'] = meta.default ?? meta;
   } catch { /* not found */ }
 

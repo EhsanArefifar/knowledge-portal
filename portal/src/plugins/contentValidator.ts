@@ -71,7 +71,7 @@ function stripQF(path: string): string {
  * absolute filesystem path it should correspond to in dist/.
  *
  * Handles:
- *  - Absolute paths  (e.g. /claude-code-knowledge-base/courses/note/)
+ *  - Absolute paths  (e.g. /knowledge-portal/courses/note/)
  *  - Relative paths  (e.g. ../images/foo.png)
  *
  * Returns null when the reference clearly should be skipped (external/fragment).

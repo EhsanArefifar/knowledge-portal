@@ -27,7 +27,7 @@ interface Props {
 }
 
 const { displayName, provider, noteCount, sourceUrl, slug } = Astro.props;
-const courseHref = `/courses/${slug}`;
+const courseHref = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/courses/${slug}`;
 ---
 
 <article class="card course-card" aria-label={`Course: ${displayName}`}>

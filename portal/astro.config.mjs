@@ -3,10 +3,10 @@ import rehypeMermaid from 'rehype-mermaid';
 import { contentValidatorIntegration } from './src/plugins/contentValidator.ts';
 
 export default defineConfig({
-  site: 'https://earefifa.github.io',
-  base: '/claude-code-knowledge-base',
+  site: 'https://ehsanarefifar.github.io',
+  base: '/knowledge-portal',
   markdown: {
-    syntaxHighlight: 'shiki',
+    syntaxHighlight: { type: 'shiki', excludeLangs: ['mermaid'] },
     shikiConfig: { theme: 'github-dark' },
     remarkPlugins: ['remark-gfm'],
     rehypePlugins: [

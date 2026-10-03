@@ -40,12 +40,12 @@ const courseMetaMap: Record<string, { provider: string; sourceUrl?: string }> = 
 // Static imports for known course folders (new ones require adding an entry here)
 // This approach avoids dynamic require() which can break in SSG mode.
 try {
-  const claudeAcademyMeta = await import('../../Claude-academy/_course.json');
+  const claudeAcademyMeta = await import('../../../Claude-academy/_course.json');
   courseMetaMap['Claude-academy'] = claudeAcademyMeta.default ?? claudeAcademyMeta;
 } catch { /* folder not present */ }
 
 try {
-  const netNinjaMeta = await import('../../NetNinja-masterclass/_course.json');
+  const netNinjaMeta = await import('../../../NetNinja-masterclass/_course.json');
   courseMetaMap['NetNinja-masterclass'] = netNinjaMeta.default ?? netNinjaMeta;
 } catch { /* folder not present */ }
 

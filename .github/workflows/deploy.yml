@@ -38,6 +38,10 @@ jobs:
         working-directory: portal
         run: npm install
 
+      - name: Install Playwright Chromium (for rehype-mermaid)
+        working-directory: portal
+        run: npx playwright install --with-deps chromium-headless-shell
+
       - name: Build site
         working-directory: portal
         run: npm run build

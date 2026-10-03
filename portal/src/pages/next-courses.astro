@@ -18,7 +18,7 @@ const completed = await getCourses();
     <section>
       <h2 class="sub">Planned</h2>
       <div class="list">
-        {upcomingCourses.map((c, i) => <LinkCard title={c.title} url={c.url} description={c.blurb} provider={c.provider} index={i + 1} />)}
+        {upcomingCourses.map((c, i) => <LinkCard title={c.title} url={c.url} description={c.blurb} provider={c.provider} index={i + 1} alsoOn={c.alsoOn} />)}
       </div>
     </section>
 

@@ -13,7 +13,7 @@ export const providers: Provider[] = [
   { name: 'Anthropic', logo: 'logos/anthropic.png', url: 'https://anthropic.skilljar.com', color: '#d97757' },
   { name: 'Net Ninja', logo: 'logos/netninja.png', url: 'https://netninja.dev', color: '#e5484d' },
   { name: 'DeepLearning.AI', logo: 'logos/deeplearning-ai.png', url: 'https://www.deeplearning.ai', color: '#f2555a' },
-  { name: 'Udemy', logo: 'logos/udemy.png', url: 'https://www.udemy.com', color: '#a435f0' },
+  { name: 'YouTube', logo: 'logos/youtube.png', url: 'https://www.youtube.com', color: '#ff0033' },
   { name: 'Analytics Vidhya', logo: 'logos/analytics-vidhya.png', url: 'https://www.analyticsvidhya.com', color: '#2f80ed' },
   { name: 'GitHub', logo: 'logos/github.png', url: 'https://github.com', color: '#6e7681' },
 ];

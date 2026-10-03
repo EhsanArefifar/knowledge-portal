@@ -1,5 +1,8 @@
 ---
-/** External link row with provider logo — used for upcoming courses and resources. */
+/**
+ * External link row with provider logo — used for upcoming courses and resources.
+ * The title link covers the whole card; `alsoOn` links sit above it as chips.
+ */
 import Icon from './Icon.astro';
 import ProviderLogo from './ProviderLogo.astro';
 import { getProvider } from '../data/providers';
@@ -10,25 +13,38 @@ interface Props {
   description?: string;
   provider?: string;
   index?: number;
+  alsoOn?: { label: string; url: string }[];
 }
 
-const { title, url, description, provider, index } = Astro.props;
+const { title, url, description, provider, index, alsoOn = [] } = Astro.props;
 const p = getProvider(provider ?? new URL(url).hostname);
 ---
 
-<a class="link card" href={url} target="_blank" rel="noopener noreferrer">
+<div class="link card">
   {index !== undefined && <span class="index">{String(index).padStart(2, '0')}</span>}
   <ProviderLogo provider={p} size={38} />
   <span class="text">
-    <span class="title">{title}</span>
+    <a class="title" href={url} target="_blank" rel="noopener noreferrer">{title}</a>
     {description && <span class="desc">{description}</span>}
-    {provider && <span class="provider">{p.name}</span>}
+    {
+      (provider || alsoOn.length > 0) && (
+        <span class="meta">
+          {provider && <span class="provider">{p.name}</span>}
+          {alsoOn.map((l) => (
+            <a class="chip" href={l.url} target="_blank" rel="noopener noreferrer">
+              Also on {l.label} <Icon name="external" size={11} />
+            </a>
+          ))}
+        </span>
+      )
+    }
   </span>
   <Icon name="external" size={16} class="ext" />
-</a>
+</div>
 
 <style>
   .link {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.9rem;
@@ -38,7 +54,8 @@ const p = getProvider(provider ?? new URL(url).hostname);
     transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
   }
 
-  .link:hover {
+  .link:hover,
+  .link:focus-within {
     color: var(--text);
     border-color: var(--border-strong);
     box-shadow: var(--shadow);
@@ -63,6 +80,50 @@ const p = getProvider(provider ?? new URL(url).hostname);
   .title {
     font-weight: 600;
     line-height: 1.35;
+    color: var(--text);
+  }
+
+  /* Stretch the title link over the card so the whole card is clickable. */
+  .title::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .title:focus-visible {
+    outline: none;
+  }
+
+  .title:focus-visible::after {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.6rem;
+  }
+
+  .chip {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .chip:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
   }
 
   .desc {

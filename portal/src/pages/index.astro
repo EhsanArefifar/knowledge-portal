@@ -55,7 +55,7 @@ const assets = courses.reduce((n, c) => n + c.assetCount, 0);
           <a href={href('next-courses/')}>See all →</a>
         </div>
         <div class="list">
-          {upcomingCourses.map((c, i) => <LinkCard title={c.title} url={c.url} provider={c.provider} index={i + 1} />)}
+          {upcomingCourses.map((c, i) => <LinkCard title={c.title} url={c.url} provider={c.provider} index={i + 1} alsoOn={c.alsoOn} />)}
         </div>
       </section>
 
